@@ -159,6 +159,353 @@ button:hover {
 	background: #8bd17c !important;
 }
 
+/* ==============================
+ * Turn Display Badge
+ * ============================== */
+[data-ui="turn-display"] {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	gap: .45rem;
+	padding: .5rem .85rem;
+	border: 1px solid rgba(255, 255, 255, .18);
+	border-radius: .45rem;
+	background: rgba(15, 23, 42, .78);
+	box-shadow: 0 .5rem 1.4rem rgba(0, 0, 0, .24);
+	backdrop-filter: blur(6px);
+	color: #f8fafc;
+	font-size: .78rem;
+	line-height: 1.3;
+	pointer-events: none;
+	white-space: nowrap;
+}
+
+[data-ui="turn-display"] [data-turn-icon] {
+	font-size: 1rem;
+}
+
+[data-ui="turn-display"] [data-turn-label] {
+	font-weight: 600;
+	letter-spacing: .02em;
+}
+
+/* Pop animation on turn change */
+@keyframes turnPop {
+	0%   { transform: scale(1);   opacity: 1; }
+	30%  { transform: scale(1.08); opacity: .85; }
+	100% { transform: scale(1);   opacity: 1; }
+}
+
+[data-ui="turn-display"].turn-pop {
+	animation: turnPop .35s ease-out;
+}
+
+/* ==============================
+ * Typing Minigame Overlay
+ * ============================== */
+#typing-game-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, .65);
+	backdrop-filter: blur(6px);
+	opacity: 0;
+	transition: opacity .3s ease;
+	pointer-events: all;
+}
+
+#typing-game-overlay.typing-game-visible {
+	opacity: 1;
+}
+
+.typing-game-box {
+	width: min(92vw, 520px);
+	padding: 2rem 2.2rem;
+	border: 1px solid rgba(255, 255, 255, .15);
+	border-radius: .75rem;
+	background: rgba(15, 23, 42, .88);
+	box-shadow: 0 1rem 3rem rgba(0, 0, 0, .45);
+	text-align: center;
+	color: #f8fafc;
+	transform: scale(.92);
+	transition: transform .3s ease, box-shadow .35s ease;
+}
+
+.typing-game-visible .typing-game-box {
+	transform: scale(1);
+}
+
+.typing-game-header {
+	font-size: 1.35rem;
+	font-weight: 700;
+	margin-bottom: .4rem;
+}
+
+.typing-game-prompt {
+	font-size: .82rem;
+	color: rgba(248, 250, 252, .6);
+	margin: 0 0 1rem;
+}
+
+.typing-game-prompt kbd {
+	display: inline-block;
+	padding: .1em .45em;
+	border: 1px solid rgba(255, 255, 255, .25);
+	border-radius: .25rem;
+	background: rgba(255, 255, 255, .08);
+	font-family: inherit;
+	font-size: .85em;
+}
+
+.typing-game-target {
+	font-size: 1.15rem;
+	font-weight: 700;
+	letter-spacing: .04em;
+	color: #f5c16c;
+	padding: .65rem 1rem;
+	margin-bottom: 1.1rem;
+	border: 1px dashed rgba(245, 193, 108, .35);
+	border-radius: .4rem;
+	background: rgba(245, 193, 108, .06);
+	user-select: none;
+}
+
+#typing-game-input {
+	display: block;
+	width: 100%;
+	padding: .7rem .9rem;
+	border: 2px solid rgba(255, 255, 255, .2);
+	border-radius: .4rem;
+	background: rgba(255, 255, 255, .06);
+	color: #f8fafc;
+	font-size: 1.05rem;
+	font-family: inherit;
+	outline: none;
+	transition: border-color .15s ease, box-shadow .15s ease;
+	box-sizing: border-box;
+}
+
+#typing-game-input:focus {
+	border-color: #7fc7ff;
+	box-shadow: 0 0 0 3px rgba(127, 199, 255, .2);
+}
+
+#typing-game-input.typing-mismatch {
+	border-color: #ef4444;
+	box-shadow: 0 0 0 3px rgba(239, 68, 68, .2);
+}
+
+.typing-game-timer {
+	margin-top: .9rem;
+	width: 100%;
+	height: .35rem;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, .12);
+	overflow: hidden;
+}
+
+#typing-game-bar {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, #7fc7ff, #8bd17c);
+	transition: width .08s linear;
+}
+
+.typing-game-clock {
+	margin-top: .45rem;
+	font-size: .75rem;
+	color: rgba(248, 250, 252, .5);
+}
+
+/* Result states */
+.typing-game-success {
+	border-color: rgba(139, 209, 124, .5) !important;
+	box-shadow: 0 0 2rem rgba(139, 209, 124, .25) !important;
+}
+
+.typing-game-success .typing-game-header::after {
+	content: ' ✅';
+}
+
+.typing-game-fail {
+	border-color: rgba(239, 68, 68, .5) !important;
+	box-shadow: 0 0 2rem rgba(239, 68, 68, .25) !important;
+}
+
+.typing-game-fail .typing-game-header::after {
+	content: ' ❌';
+}
+
+/* ==============================
+ * Debat Timer Bar
+ * ============================== */
+#debat-timer-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 9998;
+	padding: .6rem 1.2rem .8rem;
+	background: rgba(15, 23, 42, .85);
+	backdrop-filter: blur(6px);
+	border-bottom: 1px solid rgba(255, 255, 255, .1);
+	text-align: center;
+	opacity: 0;
+	transform: translateY(-100%);
+	transition: opacity .3s ease, transform .3s ease;
+	pointer-events: none;
+}
+
+#debat-timer-overlay.debat-timer-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+.debat-timer-label {
+	color: #f8fafc;
+	font-size: .82rem;
+	font-weight: 600;
+	margin-bottom: .4rem;
+}
+
+.debat-timer-track {
+	width: 100%;
+	height: .4rem;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, .12);
+	overflow: hidden;
+}
+
+#debat-timer-fill {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, #f5c16c, #ef4444);
+	transition: width .08s linear;
+}
+
+/* ==============================
+ * Signature Minigame Overlay
+ * ============================== */
+#signature-game-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, .65);
+	backdrop-filter: blur(6px);
+	opacity: 0;
+	transition: opacity .3s ease;
+	pointer-events: all;
+}
+
+#signature-game-overlay.signature-game-visible {
+	opacity: 1;
+}
+
+#signature-game-overlay.signature-game-fadeout {
+	opacity: 0;
+}
+
+.signature-game-box {
+	width: min(92vw, 420px);
+	padding: 2rem 2.2rem;
+	border: 1px solid rgba(255, 255, 255, .15);
+	border-radius: .75rem;
+	background: rgba(15, 23, 42, .88);
+	box-shadow: 0 1rem 3rem rgba(0, 0, 0, .45);
+	text-align: center;
+	color: #f8fafc;
+	transform: scale(.92);
+	transition: transform .3s ease, box-shadow .35s ease, border-color .35s ease;
+}
+
+.signature-game-visible .signature-game-box {
+	transform: scale(1);
+}
+
+.signature-game-header {
+	font-size: 1.35rem;
+	font-weight: 700;
+	margin-bottom: .4rem;
+}
+
+.signature-game-prompt {
+	font-size: .85rem;
+	color: rgba(248, 250, 252, .7);
+	margin: 0 0 1.2rem;
+}
+
+#signature-canvas {
+	width: 100%;
+	height: 180px;
+	background: #f8fafc;
+	border-radius: .4rem;
+	border: 2px dashed rgba(255, 255, 255, .2);
+	cursor: crosshair;
+	touch-action: none; /* Prevent scrolling when drawing on touch devices */
+	margin-bottom: 1.2rem;
+}
+
+.signature-controls {
+	display: flex;
+	gap: .8rem;
+}
+
+.sig-btn {
+	flex: 1;
+	padding: .75rem 1rem;
+	font-size: .9rem;
+	font-weight: 600;
+	border-radius: .4rem;
+	border: none;
+	cursor: pointer;
+	transition: background .2s ease, transform .1s ease;
+}
+
+.sig-btn:active {
+	transform: scale(0.96);
+}
+
+.sig-btn-secondary {
+	background: rgba(255, 255, 255, .1);
+	color: #f8fafc;
+	border: 1px solid rgba(255, 255, 255, .2);
+}
+
+.sig-btn-secondary:hover {
+	background: rgba(255, 255, 255, .15);
+}
+
+.sig-btn-primary {
+	background: #7fc7ff;
+	color: #0f172a;
+}
+
+.sig-btn-primary:hover {
+	background: #6bb9f5;
+}
+
+/* Result states */
+.signature-game-success {
+	border-color: rgba(139, 209, 124, .5) !important;
+	box-shadow: 0 0 2rem rgba(139, 209, 124, .25) !important;
+}
+
+.signature-game-fail {
+	border-color: rgba(239, 68, 68, .5) !important;
+	box-shadow: 0 0 2rem rgba(239, 68, 68, .25) !important;
+}
+
 /* Character Name Style */
 [data-ui="who"] {
 

@@ -9,5 +9,8 @@ monogatari.storage ({
 		popularitas: 50,
 		integritas: 50,
 		danaAnggaran: 50
-	}
+	},
+	currentTurn: 0,
+	typingTarget: '',
+	typingResult: ''
 });
