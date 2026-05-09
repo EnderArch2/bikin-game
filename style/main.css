@@ -643,3 +643,815 @@ input[type=range]::-ms-fill-upper {
 @media screen and (min-width: 500em) {
 
 }
+
+/* =============================================================================
+ * Masa Jabatan 5 Tahun - Immersive Political Thriller Theme
+ * ============================================================================= */
+
+:root {
+	--gov-ink: #10141b;
+	--gov-ink-2: #1a202b;
+	--gov-wood: #2a1712;
+	--gov-walnut: #4a2c1d;
+	--gov-paper: #eadcc2;
+	--gov-paper-soft: #fff4dc;
+	--gov-brass: #c9973f;
+	--gov-brass-light: #f0c66d;
+	--gov-blue: #7cb7d8;
+	--gov-green: #82b96d;
+	--gov-red: #c54a3f;
+	--gov-shadow: rgba(0, 0, 0, .55);
+	--main-color: rgba(16, 20, 27, .84);
+	--text-color: #eadcc2;
+	--character-name-color: var(--gov-brass-light);
+	--quick-menu-text-color: rgba(234, 220, 194, .72);
+	--screen-background-color: #10141b;
+}
+
+body {
+	background:
+		radial-gradient(circle at 18% 12%, rgba(240, 198, 109, .16), transparent 24rem),
+		radial-gradient(circle at 84% 20%, rgba(124, 183, 216, .12), transparent 28rem),
+		linear-gradient(135deg, #100f12 0%, #1a202b 48%, #281711 100%);
+	color: var(--gov-paper);
+	font-family: "Georgia", "Times New Roman", serif;
+	letter-spacing: 0;
+}
+
+visual-novel,
+game-screen,
+main-screen,
+loading-screen,
+language-selection-screen,
+gallery-screen,
+credits-screen,
+load-screen,
+save-screen,
+settings-screen,
+help-screen,
+[data-screen] {
+	background-color: var(--gov-ink);
+}
+
+game-screen::before,
+[data-screen="game"]::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	background:
+		linear-gradient(90deg, rgba(0, 0, 0, .38), transparent 18%, transparent 82%, rgba(0, 0, 0, .38)),
+		linear-gradient(180deg, rgba(0, 0, 0, .3), transparent 38%, rgba(0, 0, 0, .64)),
+		repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 3px);
+	mix-blend-mode: multiply;
+}
+
+game-screen [data-ui="background"] {
+	filter: contrast(1.05) saturate(.86) brightness(.82);
+}
+
+game-screen [data-character],
+[data-screen="game"] [data-character] {
+	z-index: 4;
+	filter: drop-shadow(0 1.6rem 1.6rem rgba(0, 0, 0, .58));
+	max-height: 86vh;
+}
+
+button {
+	border: 1px solid rgba(240, 198, 109, .42);
+	border-radius: .35rem;
+	background:
+		linear-gradient(180deg, rgba(240, 198, 109, .16), rgba(74, 44, 29, .48)),
+		rgba(16, 20, 27, .86);
+	box-shadow: 0 .45rem 1.2rem rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 244, 220, .16);
+	color: var(--gov-paper-soft);
+	font-family: "Georgia", "Times New Roman", serif;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	transition: border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .18s ease;
+}
+
+button:hover,
+button:focus {
+	border-color: rgba(240, 198, 109, .86);
+	background:
+		linear-gradient(180deg, rgba(240, 198, 109, .26), rgba(74, 44, 29, .58)),
+		rgba(16, 20, 27, .94);
+	box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .38), 0 0 0 3px rgba(201, 151, 63, .18);
+	color: #fff7e6;
+	transform: translateY(-1px);
+}
+
+main-screen,
+loading-screen,
+language-selection-screen,
+gallery-screen,
+credits-screen,
+load-screen,
+save-screen,
+settings-screen,
+help-screen,
+[data-screen]:not([data-screen="game"]) {
+	position: relative;
+	background:
+		linear-gradient(90deg, rgba(16, 20, 27, .92), rgba(16, 20, 27, .64) 42%, rgba(42, 23, 18, .78)),
+		radial-gradient(circle at 78% 22%, rgba(201, 151, 63, .16), transparent 22rem),
+		linear-gradient(135deg, #10141b 0%, #1a202b 52%, #2a1712 100%);
+	color: var(--gov-paper);
+}
+
+main-screen::before,
+loading-screen::before,
+language-selection-screen::before,
+gallery-screen::before,
+credits-screen::before,
+load-screen::before,
+save-screen::before,
+settings-screen::before,
+help-screen::before,
+[data-screen]:not([data-screen="game"])::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		linear-gradient(90deg, rgba(240, 198, 109, .14) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(240, 198, 109, .08) 1px, transparent 1px);
+	background-size: 5.5rem 5.5rem;
+	-webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+	mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+main-screen,
+[data-screen="main"] {
+	justify-content: center;
+	align-items: flex-start;
+	padding: clamp(1rem, 4vw, 4rem);
+	background:
+		linear-gradient(90deg, rgba(10, 12, 16, .96), rgba(10, 12, 16, .72) 42%, rgba(42, 23, 18, .5)),
+		radial-gradient(circle at 68% 34%, rgba(240, 198, 109, .18), transparent 22rem),
+		linear-gradient(135deg, #10141b 0%, #1d2530 54%, #2a1712 100%);
+}
+
+main-screen::before {
+	background:
+		linear-gradient(90deg, rgba(240, 198, 109, .16) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(240, 198, 109, .08) 1px, transparent 1px),
+		radial-gradient(circle at 76% 34%, rgba(240, 198, 109, .22), transparent 18rem);
+	background-size: 5.5rem 5.5rem, 5.5rem 5.5rem, auto;
+}
+
+main-screen::after,
+[data-screen="main"]::after {
+	content: "MASA JABATAN 5 TAHUN";
+	position: absolute;
+	left: clamp(1.25rem, 6vw, 5rem);
+	top: clamp(1.25rem, 9vh, 6rem);
+	max-width: min(38rem, 80vw);
+	color: var(--gov-paper-soft);
+	font-size: clamp(2.2rem, 7vw, 6.8rem);
+	font-weight: 800;
+	line-height: .92;
+	text-align: left;
+	text-shadow: 0 .35rem 1rem rgba(0, 0, 0, .58);
+}
+
+main-screen main-menu,
+main-menu {
+	left: clamp(1.25rem, 6vw, 5rem);
+	right: auto;
+	bottom: clamp(1.25rem, 8vh, 5rem);
+	align-items: stretch;
+	gap: .7rem;
+	z-index: 3;
+}
+
+main-screen button,
+[data-screen="main"] button,
+main-menu button {
+	width: min(17rem, 72vw);
+	height: 3.2rem;
+	text-align: left;
+	padding: 0 1.1rem;
+	border-left: .28rem solid var(--gov-brass);
+	background:
+		linear-gradient(90deg, rgba(201, 151, 63, .26), rgba(16, 20, 27, .72)),
+		rgba(16, 20, 27, .86);
+}
+
+text-box,
+[data-component="text-box"] {
+    left: 50%;
+    bottom: 1rem;
+    
+    /* THE FIX: Removed the 74rem cap. Now it takes up the whole screen minus a small 1rem margin on each side */
+    width: calc(100% - 2rem); 
+    
+    min-height: 22%;
+    max-height: 28%;
+    transform: translateX(-50%);
+    border: 1px solid rgba(240, 198, 109, .38);
+    border-bottom: .24rem solid rgba(201, 151, 63, .82);
+    border-radius: .45rem .45rem .25rem .25rem;
+    background:
+        linear-gradient(180deg, rgba(255, 244, 220, .06), transparent 28%),
+        linear-gradient(90deg, rgba(42, 23, 18, .9), rgba(16, 20, 27, .9) 34%, rgba(16, 20, 27, .84));
+    box-shadow: 0 1.3rem 3.2rem rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 244, 220, .12);
+    backdrop-filter: blur(10px);
+    color: var(--gov-paper-soft);
+    z-index: 12;
+}
+
+text-box::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: .35rem;
+	background: linear-gradient(180deg, var(--gov-brass-light), var(--gov-brass), #6e421d);
+}
+
+text-box::after {
+	background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .32) 85%);
+}
+
+[data-ui="who"],
+text-box [data-content="name"] {
+	color: var(--gov-brass-light);
+	font-size: .95rem;
+	font-weight: 800;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	text-shadow: 0 1px 0 rgba(0, 0, 0, .45);
+}
+
+[data-content="dialog"],
+[data-ui="say"],
+text-box p {
+    color: #fff8e8;
+    font-size: clamp(1rem, 1.35vw, 1.25rem);
+    line-height: 1.56;
+    text-shadow: 0 1px .2rem rgba(0, 0, 0, .55);
+    
+    /* THE FIX: Forces text to use only 75% of the box, leaving the right side empty */
+    max-width: 75%; 
+    padding-right: 0;
+}
+
+choice-container,
+[data-component="choice-container"] {
+	z-index: 30;
+	width: min(42rem, calc(100% - 2rem));
+}
+
+choice-container [data-content="wrapper"] {
+	gap: .65rem;
+}
+
+choice-container button,
+[data-component="choice-container"] button {
+	width: 100%;
+	margin: 0;
+	padding: .95rem 1.1rem;
+	border-color: rgba(240, 198, 109, .44);
+	border-left: .3rem solid var(--gov-brass);
+	background:
+		linear-gradient(90deg, rgba(201, 151, 63, .22), rgba(16, 20, 27, .9)),
+		rgba(16, 20, 27, .92);
+	text-align: left;
+	text-transform: none;
+	letter-spacing: 0;
+	line-height: 1.35;
+}
+
+choice-container button:hover,
+[data-component="choice-container"] button:hover {
+	border-left-color: var(--gov-red);
+	box-shadow: 0 .7rem 1.8rem rgba(0, 0, 0, .45), 0 0 0 3px rgba(197, 74, 63, .16);
+}
+
+[data-ui="leadership-stats"] {
+	top: .9rem;
+	left: .9rem;
+	gap: .55rem;
+	z-index: 18;
+	color: var(--gov-paper-soft);
+}
+
+[data-ui="leadership-stats"] .stat-card {
+	position: relative;
+	overflow: hidden;
+	min-width: 8.25rem;
+	border: 1px solid rgba(240, 198, 109, .34);
+	border-radius: .35rem;
+	background:
+		linear-gradient(180deg, rgba(255, 244, 220, .08), transparent),
+		rgba(16, 20, 27, .8);
+	box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 244, 220, .1);
+	backdrop-filter: blur(10px);
+}
+
+[data-ui="leadership-stats"] .stat-card::before {
+	content: "";
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: .18rem;
+	background: var(--gov-brass);
+}
+
+[data-ui="leadership-stats"] span {
+	color: rgba(234, 220, 194, .72);
+	font-family: Arial, sans-serif;
+	font-weight: 700;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+[data-ui="leadership-stats"] strong {
+	color: var(--gov-paper-soft);
+	font-size: 1.2rem;
+}
+
+[data-ui="leadership-stats"] .stat-meter {
+	height: .35rem;
+	background: rgba(234, 220, 194, .14);
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, .35);
+}
+
+[data-stat-bar="popularitas"] {
+	background: linear-gradient(90deg, #d2a14a, #f0c66d) !important;
+}
+
+[data-stat-bar="integritas"] {
+	background: linear-gradient(90deg, #4e93b9, #9bcce8) !important;
+}
+
+[data-stat-bar="danaAnggaran"] {
+	background: linear-gradient(90deg, #5f9a4d, #a2cf78) !important;
+}
+
+[data-ui="turn-display"] {
+	top: .9rem;
+	right: .9rem;
+	border-color: rgba(124, 183, 216, .36);
+	border-radius: .35rem;
+	background:
+		linear-gradient(180deg, rgba(124, 183, 216, .14), transparent),
+		rgba(16, 20, 27, .8);
+	box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .36), inset 0 1px 0 rgba(255, 244, 220, .1);
+	backdrop-filter: blur(10px);
+	color: var(--gov-paper-soft);
+}
+
+[data-ui="turn-display"] [data-turn-label] {
+	font-family: Arial, sans-serif;
+	font-size: .75rem;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+quick-menu,
+[data-component="quick-menu"] {
+    position: absolute;
+    top: auto;
+    bottom: 1.5rem; /* Aligns neatly with the text box */
+    right: 1.5rem;  /* Pushes it into that extra space on the far right */
+    
+    /* Your styling (keep this!) */
+    width: auto;
+    height: auto;
+    max-height: none;
+    gap: .15rem;
+    padding: .25rem;
+    border: 1px solid rgba(240, 198, 109, .24);
+    border-radius: .35rem;
+    background: rgba(16, 20, 27, .72);
+    box-shadow: 0 .55rem 1.4rem rgba(0, 0, 0, .34);
+    backdrop-filter: blur(9px);
+    z-index: 100;
+}
+
+quick-menu button,
+[data-component="quick-menu"] button,
+[data-component="quick-menu"] span {
+	min-width: 2.35rem;
+	width: auto;
+	height: 2.1rem;
+	margin: 0;
+	padding: 0 .55rem;
+	border: 0;
+	border-radius: .25rem;
+	background: transparent;
+	color: rgba(234, 220, 194, .78);
+	font-family: Arial, sans-serif;
+	font-size: .72rem;
+	letter-spacing: .05em;
+}
+
+quick-menu button:hover,
+quick-menu button:focus,
+[data-component="quick-menu"] span:hover {
+	background: rgba(240, 198, 109, .14);
+	color: var(--gov-paper-soft);
+	box-shadow: none;
+	transform: none;
+}
+
+#typing-game-overlay,
+#signature-game-overlay {
+	background:
+		radial-gradient(circle at 50% 42%, rgba(201, 151, 63, .12), transparent 21rem),
+		rgba(5, 7, 10, .78);
+	backdrop-filter: blur(9px);
+}
+
+.typing-game-box,
+.signature-game-box {
+	border-color: rgba(240, 198, 109, .38);
+	border-radius: .45rem;
+	background:
+		linear-gradient(180deg, rgba(255, 244, 220, .08), transparent 28%),
+		rgba(16, 20, 27, .92);
+	box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, .54), inset 0 1px 0 rgba(255, 244, 220, .12);
+	color: var(--gov-paper-soft);
+}
+
+.typing-game-header,
+.signature-game-header,
+.debat-timer-label {
+	color: var(--gov-brass-light);
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+.typing-game-target {
+	border-color: rgba(240, 198, 109, .45);
+	background: rgba(240, 198, 109, .08);
+	color: var(--gov-brass-light);
+}
+
+#typing-game-input {
+	border-color: rgba(240, 198, 109, .28);
+	background: rgba(255, 244, 220, .08);
+	color: var(--gov-paper-soft);
+}
+
+#typing-game-input:focus {
+	border-color: var(--gov-blue);
+	box-shadow: 0 0 0 3px rgba(124, 183, 216, .2);
+}
+
+#typing-game-bar {
+	background: linear-gradient(90deg, var(--gov-blue), var(--gov-brass-light), var(--gov-red));
+}
+
+#debat-timer-overlay {
+	background:
+		linear-gradient(90deg, rgba(197, 74, 63, .18), transparent),
+		rgba(16, 20, 27, .88);
+	border-bottom-color: rgba(240, 198, 109, .28);
+}
+
+#debat-timer-fill {
+	background: linear-gradient(90deg, var(--gov-brass-light), var(--gov-red));
+}
+
+#signature-canvas {
+	background:
+		linear-gradient(90deg, rgba(0, 0, 0, .035) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(0, 0, 0, .035) 1px, transparent 1px),
+		#f3ead7;
+	background-size: 1.4rem 1.4rem;
+	border-color: rgba(74, 44, 29, .36);
+	box-shadow: inset 0 .35rem .8rem rgba(74, 44, 29, .12);
+}
+
+.sig-btn-primary {
+	background: linear-gradient(180deg, var(--gov-brass-light), var(--gov-brass));
+	color: #17100b;
+}
+
+.sig-btn-primary:hover {
+	background: linear-gradient(180deg, #ffd985, var(--gov-brass));
+}
+
+.sig-btn-secondary {
+	background: rgba(234, 220, 194, .08);
+	color: var(--gov-paper-soft);
+}
+
+#case-loading-overlay,
+#ending-credits-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background:
+		linear-gradient(90deg, rgba(10, 12, 16, .96), rgba(16, 20, 27, .86) 48%, rgba(42, 23, 18, .94)),
+		radial-gradient(circle at 72% 34%, rgba(240, 198, 109, .16), transparent 22rem);
+	color: var(--gov-paper-soft);
+	opacity: 0;
+	pointer-events: all;
+	transition: opacity .32s ease;
+}
+
+#case-loading-overlay::before,
+#ending-credits-overlay::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		linear-gradient(90deg, rgba(240, 198, 109, .12) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(240, 198, 109, .07) 1px, transparent 1px),
+		linear-gradient(180deg, rgba(0, 0, 0, .12), rgba(0, 0, 0, .48));
+	background-size: 5rem 5rem, 5rem 5rem, auto;
+}
+
+#case-loading-overlay::after {
+	content: "RAHASIA";
+	position: absolute;
+	right: clamp(1.5rem, 8vw, 7rem);
+	bottom: clamp(1.5rem, 10vh, 6rem);
+	padding: .35rem .9rem;
+	border: .16rem solid rgba(197, 74, 63, .55);
+	color: rgba(197, 74, 63, .76);
+	font-family: Arial, sans-serif;
+	font-size: clamp(1rem, 4vw, 2.6rem);
+	font-weight: 900;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+	transform: rotate(-10deg);
+}
+
+#case-loading-overlay.case-loading-visible,
+#ending-credits-overlay.ending-credits-visible {
+	opacity: 1;
+}
+
+#case-loading-overlay.case-loading-exit,
+#ending-credits-overlay.ending-credits-exit {
+	opacity: 0;
+}
+
+.case-loading-panel {
+	position: relative;
+	z-index: 1;
+	width: min(42rem, calc(100% - 2rem));
+	padding: clamp(1.25rem, 4vw, 2.6rem);
+	border-left: .28rem solid var(--gov-brass);
+	background:
+		linear-gradient(180deg, rgba(255, 244, 220, .09), transparent 34%),
+		rgba(16, 20, 27, .72);
+	box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 244, 220, .12);
+	backdrop-filter: blur(8px);
+	transform: translateY(.75rem);
+	transition: transform .32s ease;
+}
+
+.case-loading-visible .case-loading-panel {
+	transform: translateY(0);
+}
+
+.case-loading-eyebrow,
+.ending-credits-kicker {
+	color: var(--gov-brass-light);
+	font-family: Arial, sans-serif;
+	font-size: .74rem;
+	font-weight: 800;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+}
+
+.case-loading-panel h1,
+.ending-credits-scroll h1 {
+	margin: .45rem 0 .55rem;
+	color: #fff4dc;
+	font-size: clamp(2rem, 7vw, 4.8rem);
+	line-height: .94;
+	text-shadow: 0 .35rem 1rem rgba(0, 0, 0, .48);
+}
+
+.case-loading-panel p {
+	max-width: 34rem;
+	margin: 0 0 1.25rem;
+	color: rgba(234, 220, 194, .78);
+	font-size: clamp(1rem, 2vw, 1.18rem);
+	line-height: 1.5;
+}
+
+.case-loading-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .45rem;
+	margin-bottom: 1.1rem;
+}
+
+.case-loading-meta span {
+	padding: .35rem .55rem;
+	border: 1px solid rgba(240, 198, 109, .25);
+	background: rgba(16, 20, 27, .66);
+	color: rgba(234, 220, 194, .82);
+	font-family: Arial, sans-serif;
+	font-size: .7rem;
+	font-weight: 700;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+}
+
+.case-loading-track {
+	overflow: hidden;
+	height: .34rem;
+	background: rgba(234, 220, 194, .14);
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, .4);
+}
+
+.case-loading-track span {
+	display: block;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg, var(--gov-brass), var(--gov-blue), var(--gov-red));
+	transform-origin: left center;
+	animation: caseLoadingFill 1.45s ease-in-out forwards;
+}
+
+@keyframes caseLoadingFill {
+	from { transform: scaleX(0); }
+	to { transform: scaleX(1); }
+}
+
+.ending-credits-scroll {
+	position: relative;
+	z-index: 1;
+	overflow-y: auto;
+	width: min(44rem, calc(100% - 2rem));
+	max-height: min(42rem, calc(100vh - 2rem));
+	padding: clamp(1.25rem, 4vw, 2.5rem);
+	border: 1px solid rgba(240, 198, 109, .34);
+	border-bottom: .24rem solid rgba(201, 151, 63, .82);
+	background:
+		linear-gradient(180deg, rgba(255, 244, 220, .09), transparent 26%),
+		rgba(16, 20, 27, .84);
+	box-shadow: 0 1.4rem 3.4rem rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 244, 220, .12);
+	backdrop-filter: blur(9px);
+	text-align: center;
+}
+
+.ending-credits-stats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: .6rem;
+	margin: 1.2rem 0 1.6rem;
+}
+
+.ending-credits-stats div {
+	padding: .75rem .55rem;
+	border: 1px solid rgba(240, 198, 109, .25);
+	background: rgba(255, 244, 220, .06);
+}
+
+.ending-credits-stats span,
+.ending-credits-scroll p {
+	display: block;
+	margin: .65rem 0 .2rem;
+	color: rgba(234, 220, 194, .68);
+	font-family: Arial, sans-serif;
+	font-size: .72rem;
+	font-weight: 800;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+}
+
+.ending-credits-stats strong,
+.ending-credits-scroll strong {
+	display: block;
+	color: var(--gov-paper-soft);
+	font-size: clamp(1rem, 2.4vw, 1.25rem);
+	line-height: 1.35;
+}
+
+.ending-credits-scroll h2 {
+	margin: 1.25rem 0 .8rem;
+	color: var(--gov-brass-light);
+	font-size: 1.1rem;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+}
+
+#ending-credits-finish {
+	margin-top: 1.5rem;
+	min-width: min(14rem, 100%);
+	height: 3rem;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.case-loading-track span {
+		animation-duration: .01ms;
+	}
+}
+
+save-slot,
+[data-component="save-slot"] figure {
+	border: 1px solid rgba(240, 198, 109, .32);
+	border-radius: .4rem;
+	background:
+		linear-gradient(180deg, rgba(255, 244, 220, .08), transparent),
+		rgba(16, 20, 27, .84);
+	box-shadow: 0 .75rem 1.8rem rgba(0, 0, 0, .35);
+	color: var(--gov-paper-soft);
+}
+
+settings-screen,
+save-screen,
+load-screen,
+help-screen,
+gallery-screen,
+credits-screen {
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+}
+
+input,
+select,
+textarea {
+	border: 1px solid rgba(240, 198, 109, .34);
+	border-radius: .25rem;
+	background: rgba(16, 20, 27, .72);
+	color: var(--gov-paper-soft);
+}
+
+@media screen and (max-width: 48em) {
+	[data-ui="leadership-stats"] {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		top: .5rem;
+		left: .5rem;
+		right: .5rem;
+		max-width: none;
+	}
+
+	[data-ui="leadership-stats"] .stat-card {
+		min-width: 0;
+		padding: .42rem .48rem;
+	}
+
+	[data-ui="leadership-stats"] span {
+		font-size: .55rem;
+		letter-spacing: .04em;
+	}
+
+	[data-ui="leadership-stats"] strong {
+		font-size: .88rem;
+	}
+
+	[data-ui="turn-display"] {
+		top: 4.35rem;
+		right: .5rem;
+		max-width: calc(100% - 1rem);
+	}
+
+	text-box,
+	[data-component="text-box"] {
+		bottom: .5rem;
+		width: calc(100% - 1rem);
+		min-height: 31%;
+		max-height: 36%;
+	}
+
+	[data-content="dialog"],
+	[data-ui="say"],
+	text-box p {
+		color: #fff8e8;
+		font-size: clamp(1rem, 1.35vw, 1.25rem);
+		line-height: 1.56;
+		text-shadow: 0 1px .2rem rgba(0, 0, 0, .55);
+		
+		/* THE FIX: Forces text to use only 75% of the box, leaving the right side empty */
+		max-width: 75%; 
+		padding-right: 0;
+	}
+
+	quick-menu,
+    [data-component="quick-menu"] {
+        top: auto;        /* Change from 6.95rem */
+        bottom: 0.8rem;   /* Change from auto */
+        right: 1rem;
+    }
+
+	main-screen::after,
+	[data-screen="main"]::after {
+		top: 1.2rem;
+		font-size: clamp(2rem, 13vw, 4rem);
+	}
+
+	main-menu {
+		left: 1rem;
+		bottom: 1rem;
+	}
+}

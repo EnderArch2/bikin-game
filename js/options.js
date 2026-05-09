@@ -20,7 +20,7 @@ monogatari.settings({
 	'Name': 'My Visual Novel',
 
 	// The version of your game in semantic versioning (https://semver.org/).
-	'Version': '0.1.0',
+	'Version': '0.1.1',
 
 	// Initial Label *
 	'Label': 'Start',
@@ -104,7 +104,7 @@ monogatari.settings({
 		'icons': 'icons',
 		'images': 'images',
 		'music': 'music',
-		'scenes': 'backgrounds',
+		'scenes': 'scenes',
 		'sounds': 'sounds',
 		'ui': 'ui',
 		'videos': 'videos',
