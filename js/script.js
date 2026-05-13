@@ -18,7 +18,7 @@ const timeMap = [
   "Tahun 1 - Bulan 4", // Turn 1
   "Tahun 1 - Bulan 7", // Turn 2
   "Tahun 1 - Bulan 10", // Turn 3
-  "Tahun 2 - Bulan 1", // Turn 4
+  "Tahun 2 - Bulan 1 (Bantuan Awal)", // Turn 4 - Pak Surya Muncul
   "Tahun 2 - Bulan 4", // Turn 5
   "Tahun 2 - Bulan 7", // Turn 6
   "Tahun 2 - Bulan 10 (Tragedi Jembatan)", // Turn 7
@@ -29,12 +29,12 @@ const timeMap = [
   "Tahun 4 - Bulan 1", // Turn 12
   "Tahun 4 - Bulan 4", // Turn 13
   "Tahun 4 - Bulan 7", // Turn 14
-  "Tahun 4 - Bulan 10 (Tawaran Gelap)", // Turn 15
+  "Tahun 4 - Bulan 10", // Turn 15
   "Tahun 5 - Bulan 1", // Turn 16
   "Tahun 5 - Bulan 2", // Turn 17
-  "Tahun 5 - Bulan 3", // Turn 18
+  "Tahun 5 - Bulan 3 (Tawaran Gelap)", // Turn 18 - Pak Surya Menagih
   "Tahun 5 - Bulan 4", // Turn 19
-  "Tahun 5 - Bulan 5", // Turn 20
+  "Tahun 5 - Bulan 5 (Bencana)", // Turn 20 - Rantai Event Bencana
   "Tahun 5 - Bulan 6", // Turn 21
   "Tahun 5 - Bulan 8", // Turn 22
   "Tahun 5 - Bulan 10", // Turn 23
@@ -88,22 +88,22 @@ function setupLeadershipStatsUI() {
   const panel = document.createElement("aside");
   panel.dataset.ui = "leadership-stats";
   panel.innerHTML = `
-		<div class="stat-card">
-			<span>Popularitas</span>
-			<strong><span data-stat="popularitas">50</span></strong>
-			<div class="stat-meter"><span data-stat-bar="popularitas"></span></div>
-		</div>
-		<div class="stat-card">
-			<span>Integritas</span>
-			<strong><span data-stat="integritas">50</span></strong>
-			<div class="stat-meter"><span data-stat-bar="integritas"></span></div>
-		</div>
-		<div class="stat-card">
-			<span>Dana Anggaran</span>
-			<strong><span data-stat="danaAnggaran">50</span></strong>
-			<div class="stat-meter"><span data-stat-bar="danaAnggaran"></span></div>
-		</div>
-	`;
+    <div class="stat-card">
+      <span>Popularitas</span>
+      <strong><span data-stat="popularitas">50</span></strong>
+      <div class="stat-meter"><span data-stat-bar="popularitas"></span></div>
+    </div>
+    <div class="stat-card">
+      <span>Integritas</span>
+      <strong><span data-stat="integritas">50</span></strong>
+      <div class="stat-meter"><span data-stat-bar="integritas"></span></div>
+    </div>
+    <div class="stat-card">
+      <span>Dana Anggaran</span>
+      <strong><span data-stat="danaAnggaran">50</span></strong>
+      <div class="stat-meter"><span data-stat-bar="danaAnggaran"></span></div>
+    </div>
+  `;
 
   gameScreen.appendChild(panel);
   updateLeadershipStatsUI();
@@ -128,9 +128,9 @@ function setupTurnUI() {
   const badge = document.createElement("div");
   badge.dataset.ui = "turn-display";
   badge.innerHTML = `
-		<span data-turn-icon>📅</span>
-		<span data-turn-label>${timeMap[currentTurn]}</span>
-	`;
+    <span data-turn-icon>📅</span>
+    <span data-turn-label>${timeMap[currentTurn]}</span>
+  `;
 
   gameScreen.appendChild(badge);
 }
@@ -166,7 +166,12 @@ function advanceTurn() {
 
 function resetTurn() {
   currentTurn = 0;
-  monogatari.storage({ currentTurn: 0 });
+  monogatari.storage({
+    currentTurn: 0,
+    terimaSuap: false,
+    mayaWarned: false,
+    danaDaruratHabis: false,
+  });
   updateTurnUI();
 }
 
@@ -222,8 +227,22 @@ function shouldEnterAct3() {
   return act2Progress().resolvedEvents >= ACT2_EVENTS_BEFORE_ACT3;
 }
 
+// LOGIKA ENDING DIKUNCI BERDASARKAN CERITA
 function finalEndingBranch() {
   const stats = leadershipStats();
+  const terimaSuap = monogatari.storage("terimaSuap") || false;
+
+  // Jika menerima suap, rute "Negarawan" dikunci, tidak peduli setinggi apa integritasnya
+  if (terimaSuap) {
+    if (
+      stats.popularitas >= 40 &&
+      stats.danaAnggaran >= 30 &&
+      stats.integritas >= 20
+    ) {
+      return "Ending2"; // Boneka Emas
+    }
+    return "Ending3"; // Runtuh
+  }
 
   if (
     stats.popularitas >= 70 &&
@@ -310,27 +329,29 @@ function caseLoadingDetails() {
 function ShowCaseLoadingScreen() {
   const details = caseLoadingDetails();
   const stats = leadershipStats();
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
   const duration = reduceMotion ? 650 : 1650;
   const overlay = document.createElement("div");
 
   overlay.id = "case-loading-overlay";
   overlay.innerHTML = `
-		<div class="case-loading-panel">
-			<div class="case-loading-eyebrow">${details.eyebrow}</div>
-			<h1>${details.title}</h1>
-			<p>${details.subtitle}</p>
-			<div class="case-loading-meta">
-				<span>${timeMap[currentTurn] || "Agenda Berikutnya"}</span>
-				<span>Pop ${stats.popularitas}</span>
-				<span>Int ${stats.integritas}</span>
-				<span>Dana ${stats.danaAnggaran}</span>
-			</div>
-			<div class="case-loading-track">
-				<span></span>
-			</div>
-		</div>
-	`;
+    <div class="case-loading-panel">
+      <div class="case-loading-eyebrow">${details.eyebrow}</div>
+      <h1>${details.title}</h1>
+      <p>${details.subtitle}</p>
+      <div class="case-loading-meta">
+        <span>${timeMap[currentTurn] || "Agenda Berikutnya"}</span>
+        <span>Pop ${stats.popularitas}</span>
+        <span>Int ${stats.integritas}</span>
+        <span>Dana ${stats.danaAnggaran}</span>
+      </div>
+      <div class="case-loading-track">
+        <span></span>
+      </div>
+    </div>
+  `;
 
   document.body.appendChild(overlay);
 
@@ -341,19 +362,22 @@ function ShowCaseLoadingScreen() {
   setTimeout(function () {
     overlay.classList.add("case-loading-exit");
 
-    setTimeout(function () {
-      overlay.remove();
+    setTimeout(
+      function () {
+        overlay.remove();
 
-      try {
-        monogatari.next();
-      } catch (_e) {
-        const gameScreen = document.querySelector("game-screen");
+        try {
+          monogatari.next();
+        } catch (_e) {
+          const gameScreen = document.querySelector("game-screen");
 
-        if (gameScreen) {
-          gameScreen.click();
+          if (gameScreen) {
+            gameScreen.click();
+          }
         }
-      }
-    }, reduceMotion ? 120 : 320);
+      },
+      reduceMotion ? 120 : 320,
+    );
   }, duration);
 }
 
@@ -391,29 +415,29 @@ function StartCreditScene() {
 
   overlay.id = "ending-credits-overlay";
   overlay.innerHTML = `
-		<div class="ending-credits-scroll">
-			<p class="ending-credits-kicker">Laporan Akhir Masa Jabatan</p>
-			<h1>${details.title}</h1>
-			<div class="ending-credits-stats">
-				<div><span>Popularitas</span><strong>${details.stats.popularitas}</strong></div>
-				<div><span>Integritas</span><strong>${details.stats.integritas}</strong></div>
-				<div><span>Dana Anggaran</span><strong>${details.stats.danaAnggaran}</strong></div>
-			</div>
-			<section>
-				<h2>Credits</h2>
-				<p>Visual Novel Developer</p>
-				<strong>Monogatari Implementation</strong>
-				<p>Story Draft</p>
-				<strong>DRAFT_CERITA.md</strong>
-				<p>Characters</p>
-				<strong>Arya, Maya, Pak Surya, Warga Kota</strong>
-				<p>Core Systems</p>
-				<strong>Stat Kepemimpinan, Rutinitas Kasus, Minigame Politik</strong>
-				<p>Terima kasih sudah memimpin kota ini sampai akhir.</p>
-			</section>
-			<button type="button" id="ending-credits-finish">Selesai</button>
-		</div>
-	`;
+    <div class="ending-credits-scroll">
+      <p class="ending-credits-kicker">Laporan Akhir Masa Jabatan</p>
+      <h1>${details.title}</h1>
+      <div class="ending-credits-stats">
+        <div><span>Popularitas</span><strong>${details.stats.popularitas}</strong></div>
+        <div><span>Integritas</span><strong>${details.stats.integritas}</strong></div>
+        <div><span>Dana Anggaran</span><strong>${details.stats.danaAnggaran}</strong></div>
+      </div>
+      <section>
+        <h2>Credits</h2>
+        <p>Visual Novel Developer</p>
+        <strong>Monogatari Implementation</strong>
+        <p>Story Draft</p>
+        <strong>DRAFT_CERITA.md</strong>
+        <p>Characters</p>
+        <strong>Arya, Maya, Pak Surya, Warga Kota</strong>
+        <p>Core Systems</p>
+        <strong>Stat Kepemimpinan, Rutinitas Kasus, Minigame Politik</strong>
+        <p>Terima kasih sudah memimpin kota ini sampai akhir.</p>
+      </section>
+      <button type="button" id="ending-credits-finish">Selesai</button>
+    </div>
+  `;
 
   document.body.appendChild(overlay);
 
@@ -459,15 +483,15 @@ function StartTypingGame() {
   const overlay = document.createElement("div");
   overlay.id = "typing-game-overlay";
   overlay.innerHTML = `
-		<div class="typing-game-box">
-			<div class="typing-game-header">⌨️ Tantangan Pidato!</div>
-			<p class="typing-game-prompt">Ketik kalimat berikut dengan tepat lalu tekan <kbd>Enter</kbd></p>
-			<div class="typing-game-target">${TARGET}</div>
-			<input type="text" id="typing-game-input" autocomplete="off" spellcheck="false" placeholder="Mulai mengetik..." />
-			<div class="typing-game-timer"><div id="typing-game-bar"></div></div>
-			<div class="typing-game-clock" id="typing-game-clock">10.0 detik</div>
-		</div>
-	`;
+    <div class="typing-game-box">
+      <div class="typing-game-header">⌨️ Tantangan Pidato!</div>
+      <p class="typing-game-prompt">Ketik kalimat berikut dengan tepat lalu tekan <kbd>Enter</kbd></p>
+      <div class="typing-game-target">${TARGET}</div>
+      <input type="text" id="typing-game-input" autocomplete="off" spellcheck="false" placeholder="Mulai mengetik..." />
+      <div class="typing-game-timer"><div id="typing-game-bar"></div></div>
+      <div class="typing-game-clock" id="typing-game-clock">10.0 detik</div>
+    </div>
+  `;
 
   /* Prevent clicks from reaching the VN behind the overlay */
   overlay.addEventListener("click", function (e) {
@@ -566,6 +590,19 @@ function StartTypingGame() {
   }
 }
 
+function resetTurn() {
+  currentTurn = 0;
+  monogatari.storage({
+    currentTurn: 0,
+    terimaSuap: false,
+    mayaWarned: false,
+    mayaResigned: false, // Tambahan Fix
+    danaDaruratHabis: false,
+    playedEvents: [], // Tambahan Fix (Reset history event)
+  });
+  updateTurnUI();
+}
+
 window.updateLeadershipStatsUI = updateLeadershipStatsUI;
 window.setLeadershipStats = setLeadershipStats;
 window.adjustLeadershipStats = adjustLeadershipStats;
@@ -589,9 +626,9 @@ function StartDebatTimer() {
   const bar = document.createElement("div");
   bar.id = "debat-timer-overlay";
   bar.innerHTML = `
-		<div class="debat-timer-label">⏱️ Waktu tersisa untuk menjawab!</div>
-		<div class="debat-timer-track"><div id="debat-timer-fill"></div></div>
-	`;
+    <div class="debat-timer-label">⏱️ Waktu tersisa untuk menjawab!</div>
+    <div class="debat-timer-track"><div id="debat-timer-fill"></div></div>
+  `;
   document.body.appendChild(bar);
 
   requestAnimationFrame(function () {
@@ -667,16 +704,16 @@ function StartSignatureGame() {
   const overlay = document.createElement("div");
   overlay.id = "signature-game-overlay";
   overlay.innerHTML = `
-		<div class="signature-game-box">
-			<div class="signature-game-header">📝 Tanda Tangan Proposal</div>
-			<p class="signature-game-prompt">Tanda tangani dokumen di bawah ini untuk mengesahkan.</p>
-			<canvas id="signature-canvas" width="360" height="180"></canvas>
-			<div class="signature-controls">
-				<button id="signature-clear-btn" class="sig-btn sig-btn-secondary">Ulangi</button>
-				<button id="signature-submit-btn" class="sig-btn sig-btn-primary">Sahkan Proposal</button>
-			</div>
-		</div>
-	`;
+    <div class="signature-game-box">
+      <div class="signature-game-header">📝 Tanda Tangan Proposal</div>
+      <p class="signature-game-prompt">Tanda tangani dokumen di bawah ini untuk mengesahkan.</p>
+      <canvas id="signature-canvas" width="360" height="180"></canvas>
+      <div class="signature-controls">
+        <button id="signature-clear-btn" class="sig-btn sig-btn-secondary">Ulangi</button>
+        <button id="signature-submit-btn" class="sig-btn sig-btn-primary">Sahkan Proposal</button>
+      </div>
+    </div>
+  `;
 
   overlay.addEventListener("click", function (e) {
     e.stopPropagation();
@@ -688,6 +725,11 @@ function StartSignatureGame() {
   const clearBtn = document.getElementById("signature-clear-btn");
   const submitBtn = document.getElementById("signature-submit-btn");
   const box = overlay.querySelector(".signature-game-box");
+
+  // AUDIO MINIGAME
+  const audioScribble = new Audio("./assets/sounds/scribble.mp3");
+  audioScribble.loop = true;
+  const audioStamp = new Audio("./assets/sounds/stamp.mp3");
 
   /* --- Canvas Drawing Logic --- */
   let isDrawing = false;
@@ -712,6 +754,7 @@ function StartSignatureGame() {
   function startDrawing(e) {
     if (resolved) return;
     isDrawing = true;
+    audioScribble.play().catch((e) => console.log("Audio play failed:", e));
     const pos = getPointerPos(e);
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
@@ -730,6 +773,7 @@ function StartSignatureGame() {
     if (isDrawing) {
       ctx.closePath();
       isDrawing = false;
+      audioScribble.pause();
     }
   }
 
@@ -752,6 +796,7 @@ function StartSignatureGame() {
   submitBtn.addEventListener("click", () => {
     if (resolved) return;
     resolved = true;
+    audioStamp.play().catch((e) => console.log("Audio play failed:", e));
 
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const pixels = imgData.data;
@@ -813,8 +858,8 @@ monogatari.action("message").messages({
     title: "Bantuan",
     subtitle: "Masa Jabatan 5 Tahun",
     body: `
-			<p>Gunakan keputusan cerita untuk menjaga Popularitas, Integritas, dan Dana Anggaran tetap stabil.</p>
-		`,
+      <p>Gunakan keputusan cerita untuk menjaga Popularitas, Integritas, dan Dana Anggaran tetap stabil.</p>
+    `,
   },
 });
 
@@ -858,7 +903,10 @@ monogatari.assets("music", {});
 
 monogatari.assets("voices", {});
 
-monogatari.assets("sounds", {});
+monogatari.assets("sounds", {
+  scribble: "scribble.mp3",
+  stamp: "stamp.mp3",
+});
 
 monogatari.assets("videos", {});
 
@@ -872,6 +920,7 @@ monogatari.assets("scenes", {
   victory_balcony: "victory_balcony.jpg", //--
   elite_takeover_room: "elite_takeover_room.jpg",
   bankrupt_city_hall: "bankrupt_city_hall.jpg", //--
+  hallway: "hallway.jpg",
 });
 
 monogatari.characters({
@@ -893,6 +942,24 @@ monogatari.characters({
       slight_smile: "maya_slight_smile.png",
       serious: "maya_serious.png",
       urgent: "maya_urgent.png",
+    },
+  },
+  surya: {
+    name: "Pak Surya",
+    color: "#8c1c13", // Merah gelap untuk kesan antagonis/berkuasa
+    sprites: {
+      neutral: "surya_neutral.png",
+      mysterious: "surya_mysterious.png", // Digunakan saat menawarkan suap
+      angry: "surya_angry.png", // Digunakan jika Arya menolak
+    },
+  },
+  wartawan: {
+    name: "Wartawan",
+    color: "#4ade80", // Warna hijau netral khas media
+    sprites: {
+      neutral: "wartawan_neutral.png",
+      asking: "wartawan_asking.png", // Ekspresi bertanya/menyelidik
+      probing: "wartawan_probing.png", // Ekspresi mendesak/Agresif
     },
   },
 });
@@ -1019,13 +1086,7 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* ======================================================
-   * NEXT_TURN — Central Turn Router
-   * Increment turn, check for fixed events, game-over,
-   * ending threshold, or pick a random generic event.
-   * ====================================================== */
   Next_Turn: [
-    /* 1. Advance turn & update UI */
     {
       Function: {
         Apply: function () {
@@ -1037,7 +1098,6 @@ monogatari.script({
         },
       },
     },
-    /* 2. Check game-over first */
     {
       Conditional: {
         Condition: function () {
@@ -1067,34 +1127,165 @@ monogatari.script({
     "jump Next_Turn_Route",
   ],
 
-  /* Routing logic separated so Monogatari processes it as a fresh label */
   Next_Turn_Route: [
     {
       Conditional: {
         Condition: function () {
+          const stats = leadershipStats();
+          const mayaWarned = monogatari.storage("mayaWarned") || false;
+          const mayaResigned = monogatari.storage("mayaResigned") || false;
+
+          if (currentTurn === 4) return "suryaIntro";
           if (currentTurn === 10) return "jembatan";
           if (currentTurn === 18) return "negosiasi";
+          if (currentTurn === 20) return "bencana";
+          if (currentTurn === 23) return "debatFinal"; // Event Final Boss
           if (currentTurn >= 24) return "ending";
+
+          // Kondisi Maya Resign (Integritas <= 15 setelah di-warning)
+          if (stats.integritas <= 15 && mayaWarned && !mayaResigned)
+            return "mayaResign";
+
+          // Kondisi Maya Warning (Integritas <= 30)
+          if (stats.integritas <= 30 && !mayaWarned) return "mayaWarning";
+
           return "generic";
         },
+        suryaIntro: "jump Event_Surya_Intro",
         jembatan: "jump Event_Jembatan_Ambruk",
         negosiasi: "jump Event_Negosiasi_VIP",
+        bencana: "jump Event_Bencana_Alam",
+        debatFinal: "jump Event_Debat_Final",
+        mayaResign: "jump Event_Maya_Resign",
+        mayaWarning: "jump Event_Maya_Warning",
         ending: "jump Ending_Check",
         generic: "jump Next_Turn_RandomEvent",
       },
     },
   ],
 
-  /* Pick a random generic event */
-  Next_Turn_RandomEvent: [
+  // EVENT SURYA INTRO (Turn 4)
+  Event_Surya_Intro: [
     "show scene governor_office_morning with fadeIn",
     "show character maya neutral at right",
-    "show character arya thinking at left",
-    "maya Briefing pagi siap, Pak. Ada laporan baru yang masuk.",
+    "show character arya neutral at left",
+    "maya Pak, ada tamu istimewa. Pak Surya, pengusaha properti terkemuka. Dia ingin bersilaturahmi.",
+    "show character surya neutral at center with fadeIn",
+    "surya Selamat pagi, Pak Arya. Saya tidak akan menyita waktu Anda.",
+    "surya Sebagai bentuk dukungan kepada pemerintahan baru, yayasan saya ingin menyumbang dana CSR untuk program penghijauan Anda.",
+    "arya Terima kasih, Pak Surya. Bantuan dari sektor swasta sangat kami hargai.",
+    "show character surya mysterious at center",
+    "surya Tentu. Kita harus saling mendukung. Anggap saja ini... awal dari pertemanan kita.",
+    "hide character surya with fadeOut",
+    applyStatChanges({ danaAnggaran: 10, popularitas: 5 }),
+    "maya (Dana tambahan memang bagus, Pak. Tapi ingat, orang seperti dia tidak pernah memberi tanpa pamrih.)",
+    "jump Next_Turn",
+  ],
+
+  // MORALITAS MAYA (Trigger jika Integritas <= 30)
+  Event_Maya_Warning: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya serious at right",
+    "show character arya neutral at left",
+    {
+      Function: {
+        Apply: function () {
+          monogatari.storage({ mayaWarned: true });
+          return true;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    "maya Pak Arya, kita perlu bicara serius... sebagai rekan.",
+    "arya Ada apa, Maya? Kau terlihat sangat tegang.",
+    "maya Integritas pemerintahan ini dipertanyakan. Rumor korupsi dan kebijakan sepihak semakin kencang di luar sana.",
+    "maya Saya bergabung dengan Anda karena saya percaya Anda orang yang bersih. Jika angka integritas ini terus merosot, saya terpaksa harus mengajukan pengunduran diri.",
+    "arya (Aku menelan ludah. Kehilangan Maya berarti kehilangan mesin utama kantorku).",
+    "maya Tolong, Pak. Ingat kembali janji kampanye Anda.",
+    "jump Next_Turn",
+  ],
+
+  Event_Maya_Resign: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya serious at right classes focus",
+    "show character arya neutral at left classes dimmed",
+    {
+      Function: {
+        Apply: function () {
+          monogatari.storage({ mayaResigned: true });
+          return true;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    "maya Pak Gubernur. Tolong baca surat di meja Anda.",
+    "show character arya concerned at left classes focus",
+    "show character maya serious at right classes dimmed",
+    "arya Ini... surat pengunduran diri? Maya, kau tidak bisa meninggalkanku sekarang.",
+    "show character maya serious at right classes focus",
+    "show character arya concerned at left classes dimmed",
+    "maya Saya sudah memperingatkan Anda. Pemerintahan ini sudah melenceng jauh. Saya tidak bisa lagi membela keputusan-keputusan Anda di depan publik.",
+    "maya Semoga Anda menemukan jalan Anda sendiri. Selamat tinggal, Pak Arya.",
+    "hide character maya with fadeOut",
+    "show character arya concerned at center classes focus with fadeIn",
+    "arya Pintu tertutup rapat. Ruangan ini mendadak terasa begitu besar, dingin, dan sepi.",
+    "arya Mulai detik ini... aku harus membaca tumpukan laporan ini dan mengambil keputusan sendirian.",
+    applyStatChanges({ popularitas: -15 }), // Kepercayaan publik turun karena staf ahli mundur
+    "jump Next_Turn",
+  ],
+
+  // GABUNGKAN MENJADI SATU SEPERTI INI:
+  Next_Turn_RandomEvent: [
+    "show scene governor_office_morning with fadeIn",
     {
       Conditional: {
         Condition: function () {
-          const pool = [
+          const isSendiri = monogatari.storage("mayaResigned");
+          const isKorup = monogatari.storage("terimaSuap");
+
+          if (isSendiri) return "sendiri";
+          return isKorup ? "korup" : "bersih";
+        },
+        sendiri: "jump RandomEvent_Sendiri_Intro",
+        korup: "jump RandomEvent_Korup_Intro",
+        bersih: "jump RandomEvent_Bersih_Intro",
+      },
+    },
+  ],
+
+  RandomEvent_Sendiri_Intro: [
+    "show character arya thinking at center classes focus",
+    "arya (Tidak ada lagi Maya yang menyortir jadwalku. Tumpukan dokumen menggunung di meja. Aku harus memilih sendiri mana yang harus diselesaikan...)",
+    "jump RandomEvent_Picker", // Masuk ke event seperti biasa, tapi tanpa prolog Maya
+  ],
+
+  RandomEvent_Korup_Intro: [
+    "show character maya serious at right",
+    "show character arya thinking at left",
+    "maya (Dengan nada dingin dan kecewa) Briefing pagi siap, Pak. Ada laporan masuk.",
+    "jump RandomEvent_Picker",
+  ],
+
+  RandomEvent_Bersih_Intro: [
+    "show character maya neutral at right",
+    "show character arya thinking at left",
+    "maya Briefing pagi siap, Pak. Ada laporan baru yang masuk.",
+    "jump RandomEvent_Picker",
+  ],
+
+  RandomEvent_Picker: [
+    {
+      Conditional: {
+        Condition: function () {
+          let playedEvents = monogatari.storage("playedEvents") || [];
+          let isKorup = monogatari.storage("terimaSuap");
+
+          // Pool Rute Bersih (9 Event)
+          let cleanPool = [
             "JalanBerlubang",
             "PenggusuranPKL",
             "KrisisAirBersih",
@@ -1105,8 +1296,43 @@ monogatari.script({
             "Debat",
             "TandaTangan",
           ];
-          return pool[Math.floor(Math.random() * pool.length)];
+
+          // Pool Rute Korup (3 Event Khusus + Beberapa Event Standar agar tidak cepat habis)
+          let korupPool = [
+            "TitipanSurya",
+            "InvestigasiLSM",
+            "PestaElit",
+            "Wartawan",
+            "Debat",
+            "Kebijakan",
+            "TandaTangan",
+          ];
+
+          let fullPool = isKorup ? korupPool : cleanPool;
+
+          // Filter event yang belum dimainkan di siklus ini
+          let availableEvents = fullPool.filter(
+            (e) => !playedEvents.includes(e),
+          );
+
+          // FIX KRITIKAL: Jika pool habis, DAUR ULANG (Recycle) event-nya!
+          if (availableEvents.length === 0) {
+            playedEvents = []; // Kosongkan history
+            availableEvents = fullPool; // Isi ulang pool dengan semua event
+          }
+
+          // Pilih event acak dari pool yang tersedia
+          let chosenEvent =
+            availableEvents[Math.floor(Math.random() * availableEvents.length)];
+
+          // Masukkan ke history agar tidak muncul berurutan
+          playedEvents.push(chosenEvent);
+          monogatari.storage({ playedEvents: playedEvents });
+
+          return chosenEvent;
         },
+
+        // --- Daftar Jump Label (Sama seperti sebelumnya) ---
         JalanBerlubang: "jump Act2JalanBerlubang",
         PenggusuranPKL: "jump Act2PenggusuranPKL",
         KrisisAirBersih: "jump Act2KrisisAirBersih",
@@ -1116,36 +1342,88 @@ monogatari.script({
         Pidato: "jump Event_Pidato",
         Debat: "jump Minigame_Debat",
         TandaTangan: "jump Event_TandaTangan",
+
+        TitipanSurya: "jump Event_Titipan_Surya",
+        InvestigasiLSM: "jump Event_Investigasi_LSM",
+        PestaElit: "jump Event_Pesta_Elit",
       },
     },
   ],
 
   Act2JalanBerlubang: [
-    "show character maya serious at right",
-    "maya Laporan pertama: video warga memancing ikan di jalan berlubang sudah viral. Media menunggu respons Anda.",
-    "arya Satu lubang di aspal, satu lubang di kepercayaan publik.",
     {
-      Choice: {
-        Dialog: "maya Keputusan Anda?",
-        OpsiA: {
-          Text: "Perbaiki sekarang dengan dana darurat",
-          Do: "jump Act2JalanBerlubangA",
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
         },
-        OpsiB: {
-          Text: "Audit kontraktor dulu dan tahan pembayaran",
-          Do: "jump Act2JalanBerlubangB",
-        },
+        maya: "jump JalanBerlubang_Maya",
+        sendiri: "jump JalanBerlubang_Sendiri",
       },
     },
   ],
 
+  JalanBerlubang_Maya: [
+    "show character maya serious at right classes focus",
+    "maya Laporan pertama: video warga memancing ikan di jalan berlubang sudah viral.",
+    "jump JalanBerlubang_Pilihan",
+  ],
+
+  JalanBerlubang_Sendiri: [
+    "show character arya concerned at center classes focus",
+    "arya (Aku membuka map di mejaku. Laporan video warga memancing di jalan rusak sudah viral.)",
+    "jump JalanBerlubang_Pilihan",
+  ],
+
+  JalanBerlubang_Pilihan: [
+    {
+      Choice: {
+        Dialog: "Apa keputusan yang harus diambil?", // Gunakan dialog netral
+        OpsiA: { Text: "Perbaiki sekarang", Do: "jump Act2JalanBerlubangA" },
+        OpsiB: { Text: "Audit kontraktor", Do: "jump Act2JalanBerlubangB" },
+      },
+    },
+  ],
+
+  Act2JalanBerlubangA: [
+    {
+      Function: {
+        Apply: function () {
+          adjustLeadershipStats({ popularitas: 5, danaAnggaran: -10 });
+          monogatari.storage({ danaDaruratHabis: true }); // SET FLAG UNTUK RANTAI EVENT BENCANA
+          return true;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    "show notification Act2OptionA",
+    "maya Tim lapangan bergerak malam ini. Warga puas, tetapi pos darurat anggaran kita terkuras habis.",
+    "jump Next_Turn",
+  ],
+
+  Act2JalanBerlubangB: [
+    applyStatChanges({ integritas: 5, danaAnggaran: 5 }),
+    "show notification Act2OptionB",
+    "maya Audit awal menemukan klausul denda. Integritas naik, dan dana perbaikan kembali ke kas daerah.",
+    "jump Next_Turn",
+  ],
+
   Act2PenggusuranPKL: [
-    "show character maya serious at right",
-    "maya Satpol PP meminta izin menertibkan PKL di koridor utama. Pedagang meminta relokasi yang lebih manusiawi.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Satpol PP meminta izin menertibkan PKL di koridor utama. Pedagang meminta relokasi yang lebih manusiawi.",
+        sendiri:
+          "arya (Laporan Satpol PP: mereka butuh izin penertiban PKL di koridor utama. Pedagang meminta relokasi.)",
+      },
+    },
     "arya Ketertiban kota selalu terlihat mudah sampai kita melihat wajah orang yang harus pindah.",
     {
       Choice: {
-        Dialog: "maya Keputusan Anda?",
+        Dialog: "Apa keputusan yang harus diambil?",
         OpsiA: {
           Text: "Siapkan relokasi cepat yang disorot publik",
           Do: "jump Act2PenggusuranPKLA",
@@ -1158,13 +1436,44 @@ monogatari.script({
     },
   ],
 
+  Act2PenggusuranPKLA: [
+    applyStatChanges({ popularitas: 5, danaAnggaran: -5 }),
+    "show notification Act2OptionA",
+    "maya Relokasi cepat meredam kemarahan pedagang. Biayanya tidak kecil, tapi publik melihat Anda hadir.",
+    "jump Next_Turn",
+  ],
+
+  Act2PenggusuranPKLB: [
+    applyStatChanges({ integritas: 5, danaAnggaran: 5 }),
+    "show notification Act2OptionB",
+    "maya Prosedur penertiban bersih dari pungli. Retribusi tertunggak mulai masuk, meski warga bawah belum tentu senang.",
+    "jump Next_Turn",
+  ],
+
   Act2KrisisAirBersih: [
-    "show character maya urgent at right",
-    "maya Satu kecamatan mati air karena pipa utama bocor. Warga mulai berkumpul di kantor PDAM.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "show character maya urgent at right with fadeIn",
+        sendiri: "show character arya concerned at center with fadeIn",
+      },
+    },
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Pak! Satu kecamatan mati air karena pipa utama bocor. Warga mulai berkumpul di kantor PDAM.",
+        sendiri:
+          "arya (Laporan darurat: satu kecamatan mati air karena pipa utama bocor. Warga mulai marah di kantor PDAM.)",
+      },
+    },
     "arya Kalau air berhenti, kesabaran publik ikut mengering.",
     {
       Choice: {
-        Dialog: "maya Keputusan Anda?",
+        Dialog: "Apa tindakan Anda?",
         OpsiA: {
           Text: "Kirim truk tangki gratis sekarang",
           Do: "jump Act2KrisisAirBersihA",
@@ -1177,38 +1486,10 @@ monogatari.script({
     },
   ],
 
-  Act2JalanBerlubangA: [
-    applyStatChanges({ popularitas: 5, danaAnggaran: -5 }),
-    "show notification Act2OptionA",
-    "maya Tim lapangan bergerak malam ini. Warga puas, tetapi pos darurat anggaran menipis.",
-    "jump Next_Turn",
-  ],
-
-  Act2PenggusuranPKLA: [
-    applyStatChanges({ popularitas: 5, danaAnggaran: -5 }),
-    "show notification Act2OptionA",
-    "maya Relokasi cepat meredam kemarahan pedagang. Biayanya tidak kecil, tapi publik melihat Anda hadir.",
-    "jump Next_Turn",
-  ],
-
   Act2KrisisAirBersihA: [
     applyStatChanges({ popularitas: 5, danaAnggaran: -5 }),
     "show notification Act2OptionA",
     "maya Truk tangki sampai sebelum malam. Warga lega, kas operasional tertekan.",
-    "jump Next_Turn",
-  ],
-
-  Act2JalanBerlubangB: [
-    applyStatChanges({ integritas: 5, danaAnggaran: 5 }),
-    "show notification Act2OptionB",
-    "maya Audit awal menemukan klausul denda. Integritas naik, dan dana perbaikan kembali ke kas daerah.",
-    "jump Next_Turn",
-  ],
-
-  Act2PenggusuranPKLB: [
-    applyStatChanges({ integritas: 5, danaAnggaran: 5 }),
-    "show notification Act2OptionB",
-    "maya Prosedur penertiban bersih dari pungli. Retribusi tertunggak mulai masuk, meski warga bawah belum tentu senang.",
     "jump Next_Turn",
   ],
 
@@ -1219,21 +1500,21 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* ======================================================
-   * NEW GENERIC EVENTS
-   * ====================================================== */
-
-  /* Event_Audit: Temuan audit BPK */
   Event_Audit: [
-    "show scene governor_office_morning with fadeIn",
-    "show character maya serious at right",
-    "show character arya concerned at left",
-    "maya Pak, BPK baru saja mengirim laporan. Ada selisih anggaran yang mencurigakan di Dinas Pekerjaan Umum.",
-    "arya Selisih sebesar apa?",
-    "maya Cukup besar untuk jadi headline koran besok kalau bocor.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Pak, BPK baru saja mengirim laporan. Ada selisih anggaran yang mencurigakan di Dinas PU.",
+        sendiri:
+          "arya (Aku memeriksa dokumen dari BPK. Ada selisih anggaran yang sangat mencurigakan di Dinas PU.)",
+      },
+    },
+    "arya Selisih sebesar apa? Jika ini bocor, karirku bisa tamat sebelum waktunya.",
     {
       Choice: {
-        Dialog: "maya Bagaimana kita menangani ini?",
+        Dialog: "Bagaimana cara menangani ini?",
         BukaPublik: {
           Text: "Buka ke publik dan pecat pelakunya",
           Do: "jump Event_Audit_A",
@@ -1258,16 +1539,44 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* Event_Wartawan: Debat mendadak dengan pers */
   Event_Wartawan: [
-    "show scene press_conference_room with fadeIn",
-    "show character arya thinking at left",
-    "maya Pak, wartawan senior sudah menunggu di lobi. Mereka membawa pertanyaan soal proyek tahun lalu.",
-    "arya Tidak bisa ditunda?",
-    "maya Menolak wawancara justru membuat mereka menulis lebih liar.",
+    "show scene hallway with fadeIn", // Menggunakan background lorong yang benar
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Event_Wartawan_Intro_Maya",
+        sendiri: "jump Event_Wartawan_Intro_Sendiri",
+      },
+    },
+  ],
+
+  Event_Wartawan_Intro_Maya: [
+    "show character arya neutral at left with fadeIn classes dimmed",
+    "show character maya serious at right with fadeIn classes focus",
+    "maya Pak, jadwal kita selanjutnya adalah...",
+    "play sound camera_flash",
+    "show character wartawan asking at right with moveInRight classes focus",
+    "show character maya serious at right classes dimmed",
+    "wartawan Selamat siang, Pak Gubernur! Tunggu sebentar!",
+    "jump Event_Wartawan_Core",
+  ],
+
+  Event_Wartawan_Intro_Sendiri: [
+    "show character arya neutral at center with fadeIn classes focus",
+    "arya (Lorong ini biasanya sepi, tapi tiba-tiba...) ",
+    "play sound camera_flash",
+    "show character wartawan asking at right with moveInRight classes focus",
+    "wartawan Pak Arya! Satu pertanyaan untuk publik!",
+    "jump Event_Wartawan_Core",
+  ],
+
+  Event_Wartawan_Core: [
+    "wartawan Terkait proyek infrastruktur tahun lalu, beredar kabar ada pembengkakan dana yang tidak wajar. Apa tanggapan Anda?",
     {
       Choice: {
-        Dialog: "maya Strategi Anda?",
+        Dialog: "wartawan Bagaimana Anda menjelaskan hal ini?",
         Transparan: {
           Text: "Hadapi langsung dengan data terbuka",
           Do: "jump Event_Wartawan_A",
@@ -1281,26 +1590,72 @@ monogatari.script({
   ],
 
   Event_Wartawan_A: [
+    "show character arya determined at left classes focus",
+    "show character wartawan neutral at right classes dimmed",
     applyStatChanges({ integritas: 5, danaAnggaran: -3 }),
-    "maya Konferensi pers berjalan transparan. Media menulis tajuk positif, meski ada biaya penyiapan data.",
+    "arya Silakan periksa dokumen ini. Semua pengeluaran transparan.",
+    "wartawan Wartawan itu mencatat dengan cepat dan tampak puas.",
+    "hide character wartawan with moveOutRight", // Wartawan pergi lewat kanan
+
+    // Perbaikan Event_Wartawan_A bagian akhir:
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Konferensi pers dadakan tadi berjalan baik, Pak.",
+        sendiri:
+          "arya (Konferensi pers tadi cukup melelahkan, tapi setidaknya aku berhasil memberikan penjelasan.)",
+      },
+    },
     "jump Next_Turn",
   ],
 
   Event_Wartawan_B: [
+    "show character arya neutral at left classes focus",
+    "show character wartawan probing at right classes focus",
     applyStatChanges({ popularitas: 5, integritas: -3 }),
-    'maya Headline koran: "Gubernur Tampil Percaya Diri". Tapi beberapa jurnalis investigatif mencatat ketidakkonsistenan.',
+    "arya Mari kita fokus pada penyelesaian proyek tersebut...",
+    "wartawan Wartawan itu menaikkan alisnya, mencatat sambil terus memotret.",
+    "play sound camera_flash",
+    "hide character wartawan with moveOutRight",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Event_Wartawan_B_Maya",
+        sendiri: "jump Event_Wartawan_B_Sendiri",
+      },
+    },
+  ],
+
+  Event_Wartawan_B_Maya: [
+    "show character maya serious at right with fadeIn classes focus",
+    "maya Headline koran: 'Gubernur Tampil Percaya Diri'. Tapi hati-hati, Pak.",
     "jump Next_Turn",
   ],
 
-  /* Menu_Kebijakan: Pemain memilih kegiatan grinding */
+  Event_Wartawan_B_Sendiri: [
+    "show character arya concerned at center classes focus",
+    "arya (Aku berhasil mengalihkan topik. Tapi aku bisa melihat tatapan curiga jurnalis tadi.)",
+    "jump Next_Turn",
+  ],
+
   Menu_Kebijakan: [
-    "show scene governor_office_morning with fadeIn",
-    "show character maya slight_smile at right",
-    "show character arya neutral at left",
-    "maya Hari ini relatif tenang, Pak. Tidak ada krisis mendesak. Anda punya waktu untuk inisiatif mandiri.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Hari ini relatif tenang, Pak. Anda punya waktu untuk inisiatif mandiri.",
+        sendiri:
+          "arya (Hari ini relatif tenang. Aku punya waktu untuk inisiatif mandiri.)",
+      },
+    },
     {
       Choice: {
-        Dialog: "maya Mau mengisi hari ini dengan apa?",
+        Dialog: "Apa yang ingin dilakukan hari ini?",
         Blusukan: {
           Text: "Blusukan dadakan ke pasar rakyat",
           Do: "jump Menu_Kebijakan_Blusukan",
@@ -1338,7 +1693,6 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* Event_Pidato: Typing Minigame */
   Event_Pidato: [
     "show scene press_conference_room with fadeIn",
     "show character arya determined at left",
@@ -1386,11 +1740,7 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* Event_TandaTangan: Signature Minigame */
   Event_TandaTangan: [
-    "show scene governor_office_morning with fadeIn",
-    "show character maya neutral at right",
-    "show character arya thinking at left",
     "maya Pak Gubernur, ada proposal darurat terkait pencairan dana bantuan sosial yang harus segera Anda sahkan.",
     "arya Apakah dokumennya sudah diverifikasi oleh tim legal?",
     "maya Sudah, Pak. Semuanya aman. Publik dan media sedang mengawasi, jadi pastikan tanda tangan Anda tegas dan jelas.",
@@ -1435,13 +1785,36 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* Minigame_Debat: Timed Choice — 5 detik */
   Minigame_Debat: [
-    "show scene press_conference_room with fadeIn",
-    "show character arya thinking at left",
-    "show character maya serious at right",
-    "maya Pak, wartawan menyodorkan mikrofon langsung. Ada desas-desus dana pembangunan taman dialihkan untuk renovasi kantor.",
-    "maya Anda harus menjawab SEKARANG. Tidak ada waktu untuk berpikir lama.",
+    "show scene hallway with fadeIn",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Debat_Intro_Maya",
+        sendiri: "jump Debat_Intro_Sendiri",
+      },
+    },
+  ],
+
+  Debat_Intro_Maya: [
+    "show character arya thinking at left with fadeIn",
+    "show character maya urgent at right with fadeIn",
+    "maya Pak, Anda dicegat di lorong! Wartawan menyodorkan mikrofon langsung.",
+    "jump Debat_Wartawan_Muncul",
+  ],
+
+  Debat_Intro_Sendiri: [
+    "show character arya thinking at center with fadeIn",
+    "arya (Aku berjalan di lorong, mencoba menenangkan pikiran, tapi tiba-tiba kerumunan wartawan muncul dari balik pilar.)",
+    "jump Debat_Wartawan_Muncul",
+  ],
+
+  Debat_Wartawan_Muncul: [
+    "hide character maya",
+    "show character wartawan probing at right with fadeIn",
+    "wartawan Pak Gubernur! Tolong klarifikasi temuan dokumen yang membuktikan Anda memotong anggaran taman demi kenyamanan kantor Anda sendiri!",
     {
       Function: {
         Apply: function () {
@@ -1455,7 +1828,7 @@ monogatari.script({
     },
     {
       Choice: {
-        Dialog: "maya Respons Anda, Pak? Cepat!",
+        Dialog: "wartawan Jawab pertanyaan kami, Pak!",
         Tegas: {
           Text: "Bantah dengan data dan fakta audit terbaru",
           Do: "jump Debat_Tegas",
@@ -1475,8 +1848,12 @@ monogatari.script({
   Debat_Tegas: [
     "show character arya determined at left",
     applyStatChanges({ integritas: 5, popularitas: 5 }),
-    "arya Data audit sudah di tangan saya. Tidak ada satu rupiah pun yang dialihkan tanpa persetujuan tertulis.",
-    "maya Jawaban solid, Pak. Wartawan tidak punya bahan untuk menyerang balik.",
+    "arya Data audit sudah di tangan saya. Tidak ada satu rupiah pun yang dialihkan tanpa persetujuan tertulis dewan.",
+    "show character wartawan neutral at right",
+    "wartawan Si wartawan menurunkan mikrofonnya, kehabisan kata-kata karena bantahan Anda yang sangat solid.",
+    "hide character wartawan",
+    "show character maya slight_smile at right with fadeIn",
+    "maya Penanganan krisis yang sangat brilian, Pak. Mereka tidak punya bahan untuk menyerang balik.",
     "jump Next_Turn",
   ],
 
@@ -1484,7 +1861,11 @@ monogatari.script({
     "show character arya neutral at left",
     applyStatChanges({ popularitas: 3, integritas: -2 }),
     "arya Kami akan membentuk tim investigasi independen. Hasilnya akan terbuka untuk publik minggu depan.",
-    "maya Cukup aman, Pak. Tapi beberapa jurnalis mencatat bahwa ini bukan jawaban langsung.",
+    "show character wartawan asking at right",
+    "wartawan Wartawan itu masih tampak curiga, namun kerumunan media mulai tenang karena janji investigasi tersebut.",
+    "hide character wartawan",
+    "show character maya serious at right with fadeIn",
+    "maya Cukup aman untuk hari ini, Pak. Tapi jurnalis mencatat bahwa Anda mengulur waktu.",
     "jump Next_Turn",
   ],
 
@@ -1492,7 +1873,11 @@ monogatari.script({
     "show character arya concerned at left",
     applyStatChanges({ integritas: -10, popularitas: -10 }),
     "arya Saya... itu bukan... maksud saya, dana itu untuk... eh...",
-    "maya Potongan video kegagapan Anda sudah viral dalam hitungan menit, Pak.",
+    "show character wartawan probing at right",
+    "wartawan Si wartawan tersenyum puas. Ia tahu persis bahwa ia baru saja mendapatkan berita utama untuk edisi sore.",
+    "hide character wartawan",
+    "show character maya urgent at right with fadeIn",
+    "maya Potongan video kegagapan Anda sudah viral dalam hitungan menit di media sosial, Pak!",
     "maya Integritas dan Popularitas Anda jatuh drastis setelah insiden ini.",
     "jump Next_Turn",
   ],
@@ -1501,14 +1886,27 @@ monogatari.script({
    * FIXED STORY EVENTS
    * ====================================================== */
 
-  /* Turn 10: Tragedi Jembatan Barat */
   Event_Jembatan_Ambruk: [
     "show scene west_bridge_collapse with fadeIn",
-    "show character maya urgent at right with fadeIn",
-    "show character arya concerned at left with fadeIn",
-    "maya Pak! Nyalakan TV sekarang. Jembatan Barat ambruk. Ratusan kendaraan terjebak.",
-    "arya Jembatan itu diresmikan oleh gubernur sebelumku. Tapi masyarakat hanya tahu siapa yang menjabat saat ini.",
-    "maya Oposisi pasti akan memakai ini untuk menghancurkan Anda.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "show character maya urgent at right with fadeIn",
+        sendiri: "show character arya concerned at center with fadeIn",
+      },
+    },
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "maya Pak! Nyalakan TV sekarang. Jembatan Barat ambruk. Ratusan kendaraan terjebak.",
+        sendiri:
+          "arya (Suara sirine terdengar sampai kantor. Aku menyalakan TV... Jembatan Barat ambruk. Ratusan kendaraan terjebak.)",
+      },
+    },
     {
       Choice: {
         Dialog: "maya Keputusan krusial, Pak!",
@@ -1526,8 +1924,51 @@ monogatari.script({
 
   Event_Jembatan_A: [
     applyStatChanges({ integritas: 20, danaAnggaran: -25 }),
-    "maya Evakuasi berjalan. Warga melihat Anda di lapangan. Media memuji keberanian Anda, tapi kas daerah terpukul keras.",
-    "arya Harga dari tanggung jawab tidak pernah murah.",
+    "show character maya urgent at right classes dimmed",
+    "show character arya determined at left classes focus",
+    "arya Siapkan mobil. Aku akan turun ke lokasi sekarang dan memimpin evakuasi. Cairkan dana darurat!",
+    "show character maya urgent at right classes focus",
+    "show character arya determined at left classes dimmed",
+    "maya Baik, Pak! Tapi Anda harus memberikan pernyataan langsung di depan warga yang sedang marah. Anda tidak boleh terlihat ragu!",
+    {
+      Function: {
+        Apply: function () {
+          // Setting target mengetik manual jika mau
+          monogatari.storage({ typingTarget: "SAYA HADIR UNTUK MELAYANI!" });
+          StartTypingGame();
+          return false;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("typingResult") || "lose";
+        },
+        win: "jump Event_Jembatan_A_Win",
+        lose: "jump Event_Jembatan_A_Lose",
+      },
+    },
+  ],
+
+  Event_Jembatan_A_Win: [
+    "show character arya determined at left classes focus",
+    "show character maya slight_smile at right classes dimmed",
+    'arya "SAYA HADIR UNTUK MELAYANI!" Suaraku lantang menembus gemuruh hujan dan sirene ambulans.',
+    "maya Media menayangkan ketegasan Anda secara live. Publik bersimpati besar karena Anda berani pasang badan.",
+    applyStatChanges({ popularitas: 15 }),
+    "jump Next_Turn",
+  ],
+
+  Event_Jembatan_A_Lose: [
+    "show character arya concerned at left classes focus",
+    "show character maya serious at right classes dimmed",
+    'arya "Pemerintah... eh... akan menindaklanjuti..." Suaraku tenggelam oleh sorakan marah dan makian warga.',
+    "maya Kamera menangkap Anda terlihat gugup dan lemah di saat publik butuh pahlawan.",
+    applyStatChanges({ popularitas: -15 }),
     "jump Next_Turn",
   ],
 
@@ -1538,14 +1979,21 @@ monogatari.script({
     "jump Next_Turn",
   ],
 
-  /* Turn 18: Tawaran Ruang Tertutup dari Pak Surya */
   Event_Negosiasi_VIP: [
     "show scene elite_takeover_room with fadeIn",
     "show character arya thinking at left with fadeIn",
-    "arya Aroma cerutu pekat memenuhi ruangan VIP. Di seberang meja, taipan properti Pak Surya menggeser koper kecil.",
-    "arya Tahun depan pemilu lagi. Tren survei butuh keajaiban, katanya.",
-    'arya Dia hanya minta aku "kehilangan" draf tata ruang kota yang melarang pembangunan di zona resapan air.',
-    "arya Koper itu berisi dana kampanye tanpa seri. Tidak bisa dilacak.",
+    "show character surya mysterious at right with fadeIn",
+    "arya Aroma cerutu pekat memenuhi ruangan VIP. Di seberang meja, taipan properti Pak Surya menatapku sambil tersenyum tipis.",
+
+    // Dialog Surya
+    'surya "Politik itu mahal, Arya. Dan idealisme... sayangnya tidak bisa membayar biaya kampanye tahun depan."',
+    "surya Pak Surya menggeser sebuah koper kecil tanpa merek melintasi meja, tepat ke hadapanku.",
+    "surya \"Saya butuh draf tata ruang kota yang melarang pembangunan di zona resapan air itu 'hilang' dari laci dewanku.\"",
+    'arya "Ini bukan sekadar draf, Pak Surya. Ini soal keselamatan warga dari banjir."',
+    'surya "Ini soal realitas, Arya. Koper itu berisi dana kampanye tanpa nomor seri. Tidak bisa dilacak."',
+    "surya \"Anggap saja ini... investasi. Saya memastikan kursimu aman, dan kamu... memastikan proyek saya lancar. Kita bisa saling 'mengingatkan' di masa depan.\"",
+
+    "arya Bulu kudukku merinding. Dia tidak hanya menawarkan uang; dia sedang mencoba membeli kebebasanku. Jika aku menerima ini, dia akan memegang kendali penuh atas karir politikku.",
     {
       Choice: {
         Dialog:
@@ -1555,7 +2003,7 @@ monogatari.script({
           Do: "jump Event_Negosiasi_Terima",
         },
         Tolak: {
-          Text: "Tolak mentah-mentah",
+          Text: "Tolak mentah-mentah tawaran itu",
           Do: "jump Event_Negosiasi_Tolak",
         },
       },
@@ -1563,12 +2011,13 @@ monogatari.script({
   ],
 
   Event_Negosiasi_Terima: [
-    applyStatChanges({ danaAnggaran: 30 }),
     {
       Function: {
         Apply: function () {
+          monogatari.storage({ terimaSuap: true }); // MENGUNCI RUTE ENDING 1
           adjustLeadershipStats({
-            integritas: -(leadershipStats().integritas - 15),
+            danaAnggaran: 30,
+            integritas: -35,
           });
           return true;
         },
@@ -1577,22 +2026,290 @@ monogatari.script({
         },
       },
     },
-    "arya Aku mengulurkan tangan dan menerima koper itu. Berat fisiknya ringan, tapi beban moralnya menghancurkan.",
-    "maya Mulai detik ini, Pak Surya memiliki Anda. Integritas Anda tidak akan bisa pulih.",
+    "arya Aku mengulurkan tangan dan menarik koper itu mendekat. Berat fisiknya ringan, tapi beban moralnya menghancurkan.",
+    "surya \"Pilihan yang sangat cerdas, Pak Arya. Saya tahu kita akan menjadi partner yang... 'baik'.\"",
+    "surya Pak Surya tertawa pelan. Tawanya mengisyaratkan satu hal yang pasti: mulai sekarang, aku adalah bonekanya.",
+    "maya Mulai detik ini, Pak Surya memiliki Anda. Integritas Anda hancur demi kekuasaan.",
     "jump Next_Turn",
   ],
 
   Event_Negosiasi_Tolak: [
-    applyStatChanges({ integritas: 15, popularitas: -5 }),
-    "arya Aku mendorong koper itu kembali. Ruangan hening.",
-    'arya Pak Surya tersenyum dingin dan berkata: "Sayang sekali. Semoga Anda tidak menyesal."',
-    "maya Keputusan berani, Pak. Tapi bersiaplah. Elit politik tidak akan diam.",
+    applyStatChanges({ danaAnggaran: -10, popularitas: 15 }),
+    {
+      Function: {
+        Apply: function () {
+          adjustLeadershipStats({
+            integritas: 20,
+          });
+          return true;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    "arya Aku menatap koper itu sejenak, lalu mendorongnya kembali ke arah Pak Surya.",
+    'arya "Maaf, Pak Surya. Kota ini bukan barang dagangan. Dan saya bukan boneka yang bisa Anda beli dengan koper tanpa seri."',
+    "surya Wajah Pak Surya mengeras. Senyum ramahnya lenyap dalam sekejap, digantikan oleh tatapan dingin yang menusuk.",
+    'surya "Kamu idealis yang naif, Arya. Kamu pikir kamu bisa menang pemilu tanpa dukungan orang-orang seperti saya?"',
+    'surya "Camkan ini... Kamu baru saja membuat musuh yang sangat berbahaya."',
+    "arya Pak Surya mengambil kopernya dan pergi meninggalkan ruangan dengan amarah.",
+    "maya Anda mungkin kehilangan dana besar dan mendapat musuh baru, tapi setidaknya jiwa Anda masih milik Anda sendiri.",
+    "jump Next_Turn",
+  ],
+
+  // EVENT RANTAI - BENCANA ALAM
+  Event_Bencana_Alam: [
+    "show scene west_bridge_collapse with fadeIn",
+    "show character maya urgent at right",
+    "show character arya concerned at left",
+    "maya Banjir bandang di distrik selatan! Ribuan warga butuh bantuan dan dapur umum segera.",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("danaDaruratHabis") ? "habis" : "ada";
+        },
+        ada: "jump Event_Bencana_AdaDana",
+        habis: "jump Event_Bencana_HabisDana",
+      },
+    },
+  ],
+  Event_Bencana_AdaDana: [
+    applyStatChanges({ popularitas: 10, danaAnggaran: -15 }),
+    "arya Cairkan dana darurat sekarang! Jangan sampai ada kelaparan di tenda pengungsi.",
+    "maya Baik Pak! Syukurlah kita belum memakai cadangan darurat. Warga sangat terbantu dengan respons cepat Anda.",
+    "jump Next_Turn",
+  ],
+  Event_Bencana_HabisDana: [
+    applyStatChanges({ popularitas: -20, integritas: -10 }),
+    "arya Cairkan dana darurat sekarang!",
+    "maya Pak... dana darurat kita sudah habis Anda gunakan untuk perbaikan jalan berlubang secara mendadak tempo hari.",
+    "arya Astaga... Carikan pinjaman! Lakukan apa saja!",
+    "maya Terlambat, Pak. Media sudah meliput tenda pengungsi yang tidak mendapat logistik. Kemarahan publik memuncak.",
     "jump Next_Turn",
   ],
 
   /* ======================================================
-   * ENDING CHECK — Replaces old Act3 entry
+   * EVENT KHUSUS RUTE KORUP (BONEKA EMAS)
    * ====================================================== */
+
+  Event_Titipan_Surya: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya serious at right classes dimmed",
+    "show character arya concerned at left classes focus",
+    "arya (Jadwal hari ini seharusnya kosong, tapi pintu ruanganku terbuka tanpa ketukan.)",
+    "show character surya neutral at center classes focus with fadeIn",
+    "surya Halo, Pak Gubernur. Duduk saja, jangan repot-repot.",
+    "show character arya concerned at left classes dimmed",
+    "show character surya neutral at center classes focus",
+    "surya Proyek rumah sakit daerah bulan depan... pastikan tender itu jatuh ke PT Karya Abadi. Itu perusahaan keponakan saya.",
+    "show character arya concerned at left classes focus",
+    "show character surya neutral at center classes dimmed",
+    "arya Tapi Pak, PT itu rekam jejaknya buruk. Jika bangunannya bermasalah, nyawa pasien taruhannya.",
+    "show character surya mysterious at center classes focus",
+    "show character arya concerned at left classes dimmed",
+    "surya (Tersenyum dingin) Arya... saya tidak ke sini untuk berdiskusi. Saya menagih janji. Koper waktu itu bukan sumbangan amal.",
+    {
+      Choice: {
+        Dialog: "surya Bagaimana, Pak Gubernur?",
+        Turuti: {
+          Text: "Berikan proyek tersebut padanya",
+          Do: "jump Titipan_Surya_Turuti",
+        },
+        Tolak: {
+          Text: "Tolak kemauannya dan ambil risiko",
+          Do: "jump Titipan_Surya_Tolak",
+        },
+      },
+    },
+  ],
+
+  Titipan_Surya_Turuti: [
+    "show character arya concerned at left classes focus",
+    "arya ...Baik. Berkasnya akan diurus.",
+    "hide character surya with fadeOut",
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Titipan_Turuti_Maya",
+        sendiri: "jump Titipan_Turuti_Sendiri",
+      },
+    },
+  ],
+
+  Titipan_Turuti_Maya: [
+    "show character maya serious at right classes focus",
+    "maya (Menatap dingin) Proyek diserahkan tanpa tender. Integritas kita makin hancur.",
+    applyStatChanges({ integritas: -10, danaAnggaran: -15 }),
+    "jump Next_Turn",
+  ],
+
+  Titipan_Turuti_Sendiri: [
+    "arya (Aku menatap map itu. Satu lagi proyek tanpa tender. Tidak ada lagi yang mengingatkanku soal integritas...)",
+    applyStatChanges({ integritas: -10, danaAnggaran: -15 }),
+    "jump Next_Turn",
+  ],
+
+  Titipan_Surya_Tolak: [
+    "show character arya determined at left classes focus",
+    "show character surya mysterious at center classes dimmed",
+    "arya Tidak. Saya yang memutuskan siapa pemenang tender di kota ini.",
+    "show character surya angry at center classes focus",
+    "show character arya determined at left classes dimmed",
+    "surya Berani sekali kamu menggigit tangan yang memberimu makan. Lihat saja besok.",
+    "hide character surya with fadeOut",
+    "show character maya urgent at right classes focus",
+    "maya Pak! Media tiba-tiba memberitakan skandal penyelewengan dana dinas. Buzzernya bergerak sangat cepat menyerang kita!",
+    "show character arya concerned at left classes focus",
+    "show character maya urgent at right classes dimmed",
+    "arya (Sial... dia langsung menggunakan medianya untuk menghancurkan posisiku).",
+    applyStatChanges({ popularitas: -20, integritas: -10 }),
+    "jump Next_Turn",
+  ],
+
+  Event_Investigasi_LSM: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya urgent at right classes focus",
+    "show character arya neutral at left classes dimmed",
+    "maya Pak Arya, kita punya masalah besar. LSM 'Transparansi Kota' baru saja menemukan aliran dana asing yang mencurigakan di yayasan kampanye Anda.",
+    "show character arya concerned at left classes focus",
+    "show character maya urgent at right classes dimmed",
+    "arya (Uang dari Pak Surya yang belum sempat diputihkan...) Seberapa jauh mereka tahu?",
+    "show character maya serious at right classes focus",
+    "show character arya concerned at left classes dimmed",
+    "maya Cukup untuk memaksa kejaksaan turun tangan jika laporan ini dirilis. Kita harus memotong langkah mereka sekarang.",
+    {
+      Choice: {
+        Dialog: "maya Apa instruksi Anda?",
+        SuapLSM: {
+          Text: "Gunakan Dana Darurat untuk menyuap (menutup mulut) LSM tersebut",
+          Do: "jump LSM_Suap",
+        },
+        Intimidasi: {
+          Text: "Kirim preman sewaan untuk mengintimidasi kantor mereka",
+          Do: "jump LSM_Intimidasi",
+        },
+      },
+    },
+  ],
+
+  LSM_Suap: [
+    "show character arya thinking at left classes focus",
+    "show character maya serious at right classes dimmed",
+    "arya Hubungi pimpinan mereka secara tertutup. Berikan 'hibah penelitian' dari kas daerah.",
+    "show character maya serious at right classes focus",
+    "show character arya thinking at left classes dimmed",
+    "maya Membeli kebungkaman memakai uang rakyat... Baik. Kas daerah berkurang drastis.",
+    applyStatChanges({ danaAnggaran: -20, integritas: -10 }),
+    "jump Next_Turn",
+  ],
+
+  LSM_Intimidasi: [
+    "show character arya determined at left classes focus",
+    "show character maya serious at right classes dimmed",
+    "arya Aku punya kenalan organisasi masyarakat. Kirim mereka ke kantor LSM itu. Buat keributan sampai mereka takut bicara.",
+    "show character maya serious at right classes focus",
+    "show character arya determined at left classes dimmed",
+    "maya Premanisme... Warga yang merekam kejadian ini akan melihat Anda sebagai tiran, Pak.",
+    applyStatChanges({ popularitas: -20, integritas: -15 }),
+    "jump Next_Turn",
+  ],
+
+  Event_Pesta_Elit: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya serious at right classes focus",
+    "show character arya neutral at left classes dimmed",
+    "maya Pak, Anda diundang ke pesta tertutup di vila elit malam ini. Hampir semua pengembang properti nakal berkumpul di sana.",
+    "show character arya thinking at left classes focus",
+    "show character maya serious at right classes dimmed",
+    "arya Jika aku tidak datang, mereka akan memotong dukungan dana. Jika aku datang, wartawan oposisi mungkin memotretku.",
+    {
+      Choice: {
+        Dialog: "maya Apakah Anda mau menghadirinya?",
+        Hadir: {
+          Text: "Hadir dan kumpulkan dana dukungan",
+          Do: "jump Pesta_Elit_Hadir",
+        },
+        Absen: {
+          Text: "Tolak dan jaga jarak dari elit",
+          Do: "jump Pesta_Elit_Absen",
+        },
+      },
+    },
+  ],
+
+  Pesta_Elit_Hadir: [
+    applyStatChanges({ danaAnggaran: 15, popularitas: -15, integritas: -10 }),
+    "arya Aku butuh kas daerah tetap penuh, meski dari kantong mereka.",
+    "maya Foto Anda memegang cerutu bersama makelar tanah bocor ke publik. Kas kita aman, tapi rakyat membenci Anda.",
+    "jump Next_Turn",
+  ],
+
+  Pesta_Elit_Absen: [
+    applyStatChanges({ danaAnggaran: -15, popularitas: 5 }),
+    "arya Aku tidak mau mengambil risiko difoto bersama mereka.",
+    "maya Langkah yang aman. Tapi para elit itu marah dan menarik investasi mereka dari proyek-proyek kota.",
+    "jump Next_Turn",
+  ],
+
+  Event_Korup_Default: [
+    "show scene governor_office_morning with fadeIn",
+    "show character maya serious at right classes focus",
+    "show character arya thinking at left classes dimmed",
+    "maya Hari yang sepi dari media, Pak. Tapi saya mendapat laporan beberapa anggaran mulai bocor perlahan ke pihak ketiga. Ini efek bola salju dari kesepakatan Anda sebelumnya.",
+    applyStatChanges({ danaAnggaran: -5, integritas: -5 }),
+    "arya (Setiap hari di rute ini terasa seperti menambal perahu yang tenggelam perlahan).",
+    "jump Next_Turn",
+  ],
+
+  /* ======================================================
+   * FINAL BOSS: DEBAT KANDIDAT (Turn 23)
+   * ====================================================== */
+  Event_Debat_Final: [
+    "show scene press_conference_room with fadeIn",
+    "show character arya determined at left classes focus",
+    "arya Malam debat kandidat putaran terakhir. Jutaan mata tertuju ke layar televisi.",
+    "arya (Kandidat lawan baru saja melempar isu tajam tentang kinerjaku. Ini adalah panggung penentu segalanya. Aku punya 10 detik untuk melakukan closing statement!)",
+    {
+      Function: {
+        Apply: function () {
+          StartTypingGame();
+          return false;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("typingResult") || "lose";
+        },
+        win: "jump Event_Debat_Final_Win",
+        lose: "jump Event_Debat_Final_Lose",
+      },
+    },
+  ],
+
+  Event_Debat_Final_Win: [
+    "show character arya determined at left classes focus",
+    "arya Bantahanku telak, tegas, dan penuh keyakinan. Gemuruh tepuk tangan memenuhi studio.",
+    "arya (Survei kilat menunjukkan elektabilitas meroket. Aku berhasil membalikkan keadaan di detik-detik terakhir!)",
+    applyStatChanges({ popularitas: 20 }),
+    "jump Next_Turn",
+  ],
+
+  Event_Debat_Final_Lose: [
+    "show character arya concerned at left classes focus",
+    "arya Lidahku kelu. Di depan kamera, aku tertangkap basah terbata-bata dan menutupi kepanikanku.",
+    "arya (Ruangan studio hening sesaat sebelum pendukung lawan bersorak. Ini bencana mutlak untuk elektabilitas besok pagi.)",
+    applyStatChanges({ popularitas: -25 }),
+    "jump Next_Turn",
+  ],
+
   Ending_Check: [
     "show scene election_night_office with fadeIn",
     "show character arya thinking at left with fadeIn",
@@ -1686,22 +2403,27 @@ monogatari.script({
 
   GameOver: [
     "show scene #1b0f0f with fadeIn",
-    "show character arya concerned at left",
-    "show character maya serious at right",
     {
-      Function: {
-        Apply: function () {
-          monogatari.storage({ lastEnding: "gameover" });
-          return true;
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
         },
-        Revert: function () {
-          return true;
-        },
+        maya: "jump GameOver_Maya",
+        sendiri: "jump GameOver_Sendiri",
       },
     },
-    "maya Salah satu pilar kepemimpinan menyentuh angka nol, Pak.",
-    "maya Tanpa Popularitas, Integritas, atau Dana Anggaran, pemerintahan ini tidak lagi bisa bertahan.",
-    "arya Lima tahun itu bahkan tidak sempat selesai.",
+  ],
+
+  GameOver_Maya: [
+    "show character maya serious at right",
+    "maya Salah satu pilar kepemimpinan menyentuh angka nol, Pak. Pemerintahan ini berakhir.",
+    "jump CreditScene",
+  ],
+
+  GameOver_Sendiri: [
+    "show character arya concerned at center",
+    "arya (Salah satu pilar kepemimpinanku hancur. Tanpa Maya, aku tidak bisa menahan beban ini lagi.)",
+    "arya (Semuanya berakhir di sini.)",
     "jump CreditScene",
   ],
 
@@ -1721,8 +2443,8 @@ monogatari.script({
     "Laporan Akhir Masa Jabatan: {{creditTitle}}.",
     "Popularitas akhir: {{creditPopularitas}}. Integritas akhir: {{creditIntegritas}}. Dana Anggaran akhir: {{creditDanaAnggaran}}.",
     "Credits",
-    "Visual Novel Developer: Monogatari Implementation.",
-    "Story Draft: DRAFT_CERITA.md.",
+    "Visual Novel Developer: Giovanni Achmad Avicena & Hanif Muamar Irsyad",
+    "Story Draft: Giovanni Achmad Avicena & Hanif Muamar Irsyad",
     "Characters: Arya, Maya, Pak Surya, dan warga kota.",
     "Core Systems: Stat Kepemimpinan, Rutinitas Kasus, dan Minigame Politik.",
     "Terima kasih sudah memimpin kota ini sampai akhir.",

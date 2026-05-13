@@ -740,7 +740,7 @@ button:focus {
 		linear-gradient(180deg, rgba(240, 198, 109, .26), rgba(74, 44, 29, .58)),
 		rgba(16, 20, 27, .94);
 	box-shadow: 0 .65rem 1.6rem rgba(0, 0, 0, .38), 0 0 0 3px rgba(201, 151, 63, .18);
-	color: #fff7e6;
+	color: #ffe1a1;
 	transform: translateY(-1px);
 }
 
@@ -1454,4 +1454,15 @@ textarea {
 		left: 1rem;
 		bottom: 1rem;
 	}
+}
+/* Kelas untuk menggelapkan karakter yang tidak bicara */
+.dimmed {
+    filter: brightness(0.4) saturate(0.8);
+    transition: filter 0.3s ease;
+}
+
+/* Kelas untuk menyorot karakter yang bicara (kembali normal) */
+.focus {
+    filter: brightness(1) saturate(1);
+    transition: filter 0.3s ease;
 }
