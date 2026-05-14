@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /* global Monogatari */
 /* global monogatari */
 
@@ -27,12 +27,17 @@ const { $_ready, $_ } = Monogatari;
 
 // 1. Outside the $_ready function:
 
+// Register music assets
+monogatari.assets("music", {
+  "abstract-corporate": "abstract-corporate.mp3",
+  percussion: "percussion.mp3",
+  suspense: "suspense.mp3",
+});
 
-$_ready (() => {
-	// 2. Inside the $_ready function:
+$_ready(() => {
+  // 2. Inside the $_ready function:
 
-	monogatari.init ('#monogatari').then (() => {
-		// 3. Inside the init function:
-
-	});
+  monogatari.init("#monogatari").then(() => {
+    // 3. Inside the init function:
+  });
 });

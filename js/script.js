@@ -1,5 +1,18 @@
 /* global monogatari */
 
+// ==============================
+// MUSIC MANAGEMENT
+// ============================== */
+function playGameMusic(musicKey) {
+  if (musicKey && musicKey.trim() !== "") {
+    monogatari.playMusic(musicKey);
+  }
+}
+
+function stopGameMusic() {
+  monogatari.stopMusic();
+}
+
 const DEFAULT_LEADERSHIP_STATS = {
   popularitas: 50,
   integritas: 50,
@@ -11,7 +24,9 @@ const ACT2_EVENTS_BEFORE_ACT3 = 5;
 /* ==============================
  * Turn-Based Time System
  * ============================== */
-let currentTurn = 0;
+function getCurrentTurn() {
+  return monogatari.storage("currentTurn") || 0;
+}
 
 const timeMap = [
   "Tahun 1 - Bulan 1 (Pelantikan)", // Turn 0
@@ -125,6 +140,8 @@ function setupTurnUI() {
     return;
   }
 
+  const currentTurn = getCurrentTurn();
+
   const badge = document.createElement("div");
   badge.dataset.ui = "turn-display";
   badge.innerHTML = `
@@ -136,12 +153,10 @@ function setupTurnUI() {
 }
 
 function updateTurnUI() {
+  const currentTurn = getCurrentTurn();
   const label = document.querySelector("[data-turn-label]");
 
-  if (label === null) {
-    return;
-  }
-
+  if (label === null) return;
   label.textContent = timeMap[currentTurn] || `Turn ${currentTurn}`;
 
   /* Quick pop animation */
@@ -156,21 +171,23 @@ function updateTurnUI() {
 }
 
 function advanceTurn() {
-  if (currentTurn < timeMap.length - 1) {
-    currentTurn++;
+  let turn = getCurrentTurn();
+  if (turn < timeMap.length - 1) {
+    turn++;
   }
 
-  monogatari.storage({ currentTurn: currentTurn });
+  monogatari.storage({ currentTurn: turn });
   updateTurnUI();
 }
 
 function resetTurn() {
-  currentTurn = 0;
   monogatari.storage({
     currentTurn: 0,
     terimaSuap: false,
     mayaWarned: false,
+    mayaResigned: false,
     danaDaruratHabis: false,
+    playedEvents: [],
   });
   updateTurnUI();
 }
@@ -279,6 +296,7 @@ function applyStatChanges(changes) {
 }
 
 function caseLoadingDetails() {
+  const currentTurn = getCurrentTurn();
   if (currentTurn >= 24) {
     return {
       eyebrow: "Berkas Akhir",
@@ -327,58 +345,53 @@ function caseLoadingDetails() {
 }
 
 function ShowCaseLoadingScreen() {
-  const details = caseLoadingDetails();
-  const stats = leadershipStats();
-  const reduceMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
-  const duration = reduceMotion ? 650 : 1650;
-  const overlay = document.createElement("div");
+  return new Promise(function (resolve) {
+    const currentTurn = getCurrentTurn();
+    const details = caseLoadingDetails();
+    const stats = leadershipStats();
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const duration = reduceMotion ? 650 : 1650;
+    const overlay = document.createElement("div");
 
-  overlay.id = "case-loading-overlay";
-  overlay.innerHTML = `
-    <div class="case-loading-panel">
-      <div class="case-loading-eyebrow">${details.eyebrow}</div>
-      <h1>${details.title}</h1>
-      <p>${details.subtitle}</p>
-      <div class="case-loading-meta">
-        <span>${timeMap[currentTurn] || "Agenda Berikutnya"}</span>
-        <span>Pop ${stats.popularitas}</span>
-        <span>Int ${stats.integritas}</span>
-        <span>Dana ${stats.danaAnggaran}</span>
+    overlay.id = "case-loading-overlay";
+    overlay.innerHTML = `
+      <div class="case-loading-panel">
+        <div class="case-loading-eyebrow">${details.eyebrow}</div>
+        <h1>${details.title}</h1>
+        <p>${details.subtitle}</p>
+        <div class="case-loading-meta">
+          <span>${timeMap[currentTurn] || "Agenda Berikutnya"}</span>
+          <span>Pop ${stats.popularitas}</span>
+          <span>Int ${stats.integritas}</span>
+          <span>Dana ${stats.danaAnggaran}</span>
+        </div>
+        <div class="case-loading-track">
+          <span></span>
+        </div>
       </div>
-      <div class="case-loading-track">
-        <span></span>
-      </div>
-    </div>
-  `;
+    `;
 
-  document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
 
-  requestAnimationFrame(function () {
-    overlay.classList.add("case-loading-visible");
+    requestAnimationFrame(function () {
+      overlay.classList.add("case-loading-visible");
+    });
+
+    setTimeout(function () {
+      overlay.classList.add("case-loading-exit");
+
+      setTimeout(
+        function () {
+          overlay.remove();
+          // 🟢 SELESAIKAN PROMISE SECARA AMAN (Biarkan Monogatari yang menghandle state lanjutannya)
+          resolve();
+        },
+        reduceMotion ? 120 : 320,
+      );
+    }, duration);
   });
-
-  setTimeout(function () {
-    overlay.classList.add("case-loading-exit");
-
-    setTimeout(
-      function () {
-        overlay.remove();
-
-        try {
-          monogatari.next();
-        } catch (_e) {
-          const gameScreen = document.querySelector("game-screen");
-
-          if (gameScreen) {
-            gameScreen.click();
-          }
-        }
-      },
-      reduceMotion ? 120 : 320,
-    );
-  }, duration);
 }
 
 function endingCreditDetails() {
@@ -452,7 +465,6 @@ function StartCreditScene() {
 
       setTimeout(function () {
         overlay.remove();
-        monogatari.next();
       }, 280);
     });
 }
@@ -460,7 +472,7 @@ function StartCreditScene() {
 /* ==============================
  * Typing Minigame — Pidato Publik
  * ============================== */
-function StartTypingGame() {
+function StartTypingGame(resolveCallback) {
   const SENTENCES = [
     "SAYA BERJANJI BERSIH!",
     "RAKYAT ADALAH PRIORITAS UTAMA!",
@@ -473,7 +485,9 @@ function StartTypingGame() {
     "INTEGRITAS TIDAK BISA DITAWAR!",
     "BERSAMA KITA MEMBANGUN!",
   ];
-  const TARGET = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
+  const storageTarget = monogatari.storage("typingTarget");
+  const TARGET =
+    storageTarget || SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
   monogatari.storage({ typingTarget: TARGET });
 
   const TIME_LIMIT = 10000;
@@ -493,7 +507,6 @@ function StartTypingGame() {
     </div>
   `;
 
-  /* Prevent clicks from reaching the VN behind the overlay */
   overlay.addEventListener("click", function (e) {
     e.stopPropagation();
   });
@@ -504,7 +517,6 @@ function StartTypingGame() {
   const clock = document.getElementById("typing-game-clock");
   const box = overlay.querySelector(".typing-game-box");
 
-  /* Small delay so the overlay transition plays, then focus */
   requestAnimationFrame(function () {
     overlay.classList.add("typing-game-visible");
     setTimeout(function () {
@@ -514,7 +526,6 @@ function StartTypingGame() {
 
   const startTime = Date.now();
 
-  /* --- Countdown timer --- */
   const timerFrame = function () {
     if (resolved) return;
 
@@ -539,28 +550,22 @@ function StartTypingGame() {
 
   requestAnimationFrame(timerFrame);
 
-  /* --- Input handler --- */
   input.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !resolved) {
       finishGame(input.value.trim() === TARGET);
     }
   });
 
-  /* --- Live validation highlight --- */
   input.addEventListener("input", function () {
     if (resolved) return;
-
     const val = input.value;
     const match = TARGET.startsWith(val);
-
     input.classList.toggle("typing-mismatch", !match && val.length > 0);
   });
 
-  /* --- Finish --- */
   function finishGame(success) {
     if (resolved) return;
     resolved = true;
-
     input.disabled = true;
 
     if (success) {
@@ -579,28 +584,21 @@ function StartTypingGame() {
       setTimeout(function () {
         overlay.remove();
 
-        /* Advance to the Conditional that reads typingResult */
-        try {
-          monogatari.next();
-        } catch (_e) {
-          document.querySelector("game-screen").click();
+        // FIX ANTI-FREEZE: Gunakan resolveCallback jika ada (Sistem Promise Baru)
+        if (typeof resolveCallback === "function") {
+          resolveCallback();
+        } else {
+          // Fallback ke sistem lama
+          try {
+            monogatari.next();
+          } catch (_e) {
+            const gameScreen = document.querySelector("game-screen");
+            if (gameScreen) gameScreen.click();
+          }
         }
       }, 300);
     }, 900);
   }
-}
-
-function resetTurn() {
-  currentTurn = 0;
-  monogatari.storage({
-    currentTurn: 0,
-    terimaSuap: false,
-    mayaWarned: false,
-    mayaResigned: false, // Tambahan Fix
-    danaDaruratHabis: false,
-    playedEvents: [], // Tambahan Fix (Reset history event)
-  });
-  updateTurnUI();
 }
 
 window.updateLeadershipStatsUI = updateLeadershipStatsUI;
@@ -620,7 +618,13 @@ window.StartTypingGame = StartTypingGame;
  * ============================== */
 function StartDebatTimer() {
   const TIME_LIMIT = 5000;
-  let cancelled = false;
+
+  // Gunakan variabel global agar state-nya benar-benar terkunci
+  window._debatTimerCancelled = false;
+
+  /* --- Bersihkan timer lama jika masih nyangkut di layar --- */
+  const oldBar = document.getElementById("debat-timer-overlay");
+  if (oldBar) oldBar.remove();
 
   /* --- Build countdown bar overlay --- */
   const bar = document.createElement("div");
@@ -640,20 +644,24 @@ function StartDebatTimer() {
 
   /* --- Animate countdown --- */
   function tick() {
-    if (cancelled) return;
+    if (window._debatTimerCancelled) return;
 
     const elapsed = Date.now() - startTime;
     const remaining = Math.max(0, 1 - elapsed / TIME_LIMIT);
 
-    fill.style.width = remaining * 100 + "%";
+    if (fill) fill.style.width = remaining * 100 + "%";
 
-    if (remaining <= 0.3) {
+    if (remaining <= 0.3 && fill) {
       fill.style.background = "#ef4444";
     }
 
     if (elapsed >= TIME_LIMIT) {
+      window._debatTimerCancelled = true;
+
       /* Time's up — click the panic button */
-      const panicBtn = document.querySelector('[data-choice="Panik"]');
+      const panicBtn = document.querySelector(
+        'choice-container button[data-choice="Panik"], [data-choice="Panik"]',
+      );
 
       if (panicBtn) {
         panicBtn.click();
@@ -669,28 +677,28 @@ function StartDebatTimer() {
   requestAnimationFrame(tick);
 
   /* --- Cancel timer if player picks any choice --- */
-  function onChoiceClick() {
-    if (!cancelled) {
-      cancelled = true;
+  function handler(e) {
+    const btn = e.target.closest("choice-container button, [data-choice]");
+
+    if (btn) {
+      window._debatTimerCancelled = true;
       cleanup();
+      document.removeEventListener("click", handler, true);
     }
   }
 
-  document.addEventListener("click", function handler(e) {
-    const btn = e.target.closest("[data-choice]");
-
-    if (btn) {
-      onChoiceClick();
-      document.removeEventListener("click", handler);
-    }
-  });
+  document.addEventListener("click", handler, true);
 
   function cleanup() {
-    cancelled = true;
-    bar.classList.remove("debat-timer-visible");
-    setTimeout(function () {
-      bar.remove();
-    }, 300);
+    window._debatTimerCancelled = true;
+    if (bar) {
+      bar.classList.remove("debat-timer-visible");
+      setTimeout(function () {
+        if (bar.parentNode) {
+          bar.remove();
+        }
+      }, 300);
+    }
   }
 }
 
@@ -802,7 +810,6 @@ function StartSignatureGame() {
     const pixels = imgData.data;
     let drawnPixels = 0;
 
-    // Each pixel takes 4 array elements: r, g, b, a
     for (let i = 0; i < pixels.length; i += 4) {
       const r = pixels[i];
       const g = pixels[i + 1];
@@ -849,17 +856,13 @@ function StartSignatureGame() {
 window.StartDebatTimer = StartDebatTimer;
 window.StartSignatureGame = StartSignatureGame;
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupLeadershipStatsUI();
-});
-
 monogatari.action("message").messages({
   Help: {
     title: "Bantuan",
     subtitle: "Masa Jabatan 5 Tahun",
     body: `
-      <p>Gunakan keputusan cerita untuk menjaga Popularitas, Integritas, dan Dana Anggaran tetap stabil.</p>
-    `,
+        <p>Gunakan keputusan cerita untuk menjaga Popularitas, Integritas, dan Dana Anggaran tetap stabil.</p>
+      `,
   },
 });
 
@@ -899,13 +902,22 @@ monogatari.configuration("credits", {});
 
 monogatari.assets("gallery", {});
 
-monogatari.assets("music", {});
+monogatari.assets("music", {
+  kantor: "abstract-corporate.mp3",
+  tegang: "suspense.mp3",
+  krisis: "percussion.mp3",
+});
 
 monogatari.assets("voices", {});
 
 monogatari.assets("sounds", {
+  blip: "blip.mp3",
+  click: "click.mp3",
   scribble: "scribble.mp3",
-  stamp: "stamp.mp3",
+  shutter: "shutter.mp3",
+  siren: "siren.mp3",
+  typing: "typing.mp3",
+  ambience: "office.mp3",
 });
 
 monogatari.assets("videos", {});
@@ -917,9 +929,9 @@ monogatari.assets("scenes", {
   west_bridge_collapse: "west_bridge_collapse.jpg",
   press_conference_room: "press_conference_room.jpg",
   election_night_office: "election_night_office.jpg",
-  victory_balcony: "victory_balcony.jpg", //--
+  victory_balcony: "victory_balcony.jpg",
   elite_takeover_room: "elite_takeover_room.jpg",
-  bankrupt_city_hall: "bankrupt_city_hall.jpg", //--
+  bankrupt_city_hall: "bankrupt_city_hall.jpg",
   hallway: "hallway.jpg",
 });
 
@@ -927,6 +939,7 @@ monogatari.characters({
   arya: {
     name: "Arya",
     color: "#f5c16c",
+    type_sound: "blip",
     sprites: {
       neutral: "arya_neutral.png",
       thinking: "arya_thinking.png",
@@ -937,6 +950,7 @@ monogatari.characters({
   maya: {
     name: "Maya",
     color: "#7fc7ff",
+    type_sound: "click",
     sprites: {
       neutral: "maya_neutral.png",
       slight_smile: "maya_slight_smile.png",
@@ -946,22 +960,42 @@ monogatari.characters({
   },
   surya: {
     name: "Pak Surya",
-    color: "#8c1c13", // Merah gelap untuk kesan antagonis/berkuasa
+    color: "#8c1c13",
+    type_sound: "blip",
     sprites: {
       neutral: "surya_neutral.png",
-      mysterious: "surya_mysterious.png", // Digunakan saat menawarkan suap
-      angry: "surya_angry.png", // Digunakan jika Arya menolak
+      mysterious: "surya_mysterious.png",
+      angry: "surya_angry.png",
     },
   },
   wartawan: {
     name: "Wartawan",
-    color: "#4ade80", // Warna hijau netral khas media
+    color: "#4ade80",
+    type_sound: "click",
     sprites: {
       neutral: "wartawan_neutral.png",
-      asking: "wartawan_asking.png", // Ekspresi bertanya/menyelidik
-      probing: "wartawan_probing.png", // Ekspresi mendesak/Agresif
+      asking: "wartawan_asking.png",
+      probing: "wartawan_probing.png",
     },
   },
+});
+
+const { $_ready } = Monogatari;
+
+$_ready(() => {
+  monogatari
+    .init("#monogatari")
+    .then(() => {
+      // We wait a split second to make sure the game-screen is rendered
+      setTimeout(() => {
+        setupLeadershipStatsUI();
+        updateLeadershipStatsUI();
+        updateTurnUI();
+      }, 100);
+    })
+    .catch((err) => {
+      console.error("Initialization failed:", err);
+    });
 });
 
 monogatari.script({
@@ -984,6 +1018,7 @@ monogatari.script({
   ],
 
   Act1Pelantikan: [
+    "play music abstract-corporate loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     "show notification Welcome",
     "show character arya thinking at left with fadeIn",
@@ -1044,7 +1079,7 @@ monogatari.script({
   ],
 
   Act1AuditMandiri: [
-    "show character arya concerned at left",
+    "show character arya determined at left",
     "arya Aku ingin tahu ke mana setiap rupiah mengalir sebelum orang lain menjadikannya senjata.",
     {
       Function: {
@@ -1076,6 +1111,7 @@ monogatari.script({
   ],
 
   Act2Intro: [
+    "play music abstract-corporate loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     "show character maya serious at right",
     "show character arya neutral at left",
@@ -1116,8 +1152,10 @@ monogatari.script({
     {
       Function: {
         Apply: function () {
-          ShowCaseLoadingScreen();
-          return false;
+          // 🟢 Kembalikan Promise langsung dan return TRUE agar Monogatari tahu langkah ini sudah selesai
+          return ShowCaseLoadingScreen().then(function () {
+            return true;
+          });
         },
         Revert: function () {
           return true;
@@ -1134,19 +1172,18 @@ monogatari.script({
           const stats = leadershipStats();
           const mayaWarned = monogatari.storage("mayaWarned") || false;
           const mayaResigned = monogatari.storage("mayaResigned") || false;
+          const currentTurn = getCurrentTurn();
 
           if (currentTurn === 4) return "suryaIntro";
           if (currentTurn === 10) return "jembatan";
           if (currentTurn === 18) return "negosiasi";
           if (currentTurn === 20) return "bencana";
-          if (currentTurn === 23) return "debatFinal"; // Event Final Boss
+          if (currentTurn === 23) return "debatFinal";
           if (currentTurn >= 24) return "ending";
 
-          // Kondisi Maya Resign (Integritas <= 15 setelah di-warning)
           if (stats.integritas <= 15 && mayaWarned && !mayaResigned)
             return "mayaResign";
 
-          // Kondisi Maya Warning (Integritas <= 30)
           if (stats.integritas <= 30 && !mayaWarned) return "mayaWarning";
 
           return "generic";
@@ -1164,25 +1201,25 @@ monogatari.script({
     },
   ],
 
-  // EVENT SURYA INTRO (Turn 4)
   Event_Surya_Intro: [
     "show scene governor_office_morning with fadeIn",
     "show character maya neutral at right",
     "show character arya neutral at left",
     "maya Pak, ada tamu istimewa. Pak Surya, pengusaha properti terkemuka. Dia ingin bersilaturahmi.",
-    "show character surya neutral at center with fadeIn",
+    "hide character maya with fadeOut",
+    "show character surya neutral at right with fadeIn",
     "surya Selamat pagi, Pak Arya. Saya tidak akan menyita waktu Anda.",
     "surya Sebagai bentuk dukungan kepada pemerintahan baru, yayasan saya ingin menyumbang dana CSR untuk program penghijauan Anda.",
     "arya Terima kasih, Pak Surya. Bantuan dari sektor swasta sangat kami hargai.",
-    "show character surya mysterious at center",
+    "show character surya mysterious at right",
     "surya Tentu. Kita harus saling mendukung. Anggap saja ini... awal dari pertemanan kita.",
     "hide character surya with fadeOut",
     applyStatChanges({ danaAnggaran: 10, popularitas: 5 }),
+    "show character maya neutral at right with fadeIn",
     "maya (Dana tambahan memang bagus, Pak. Tapi ingat, orang seperti dia tidak pernah memberi tanpa pamrih.)",
     "jump Next_Turn",
   ],
 
-  // MORALITAS MAYA (Trigger jika Integritas <= 30)
   Event_Maya_Warning: [
     "show scene governor_office_morning with fadeIn",
     "show character maya serious at right",
@@ -1234,12 +1271,13 @@ monogatari.script({
     "show character arya concerned at center classes focus with fadeIn",
     "arya Pintu tertutup rapat. Ruangan ini mendadak terasa begitu besar, dingin, dan sepi.",
     "arya Mulai detik ini... aku harus membaca tumpukan laporan ini dan mengambil keputusan sendirian.",
-    applyStatChanges({ popularitas: -15 }), // Kepercayaan publik turun karena staf ahli mundur
+    applyStatChanges({ popularitas: -15 }),
     "jump Next_Turn",
   ],
 
-  // GABUNGKAN MENJADI SATU SEPERTI INI:
   Next_Turn_RandomEvent: [
+    "stop sound siren fadeout 2",
+    "play music abstract-corporate loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     {
       Conditional: {
@@ -1260,7 +1298,7 @@ monogatari.script({
   RandomEvent_Sendiri_Intro: [
     "show character arya thinking at center classes focus",
     "arya (Tidak ada lagi Maya yang menyortir jadwalku. Tumpukan dokumen menggunung di meja. Aku harus memilih sendiri mana yang harus diselesaikan...)",
-    "jump RandomEvent_Picker", // Masuk ke event seperti biasa, tapi tanpa prolog Maya
+    "jump RandomEvent_Picker",
   ],
 
   RandomEvent_Korup_Intro: [
@@ -1284,7 +1322,6 @@ monogatari.script({
           let playedEvents = monogatari.storage("playedEvents") || [];
           let isKorup = monogatari.storage("terimaSuap");
 
-          // Pool Rute Bersih (9 Event)
           let cleanPool = [
             "JalanBerlubang",
             "PenggusuranPKL",
@@ -1297,7 +1334,6 @@ monogatari.script({
             "TandaTangan",
           ];
 
-          // Pool Rute Korup (3 Event Khusus + Beberapa Event Standar agar tidak cepat habis)
           let korupPool = [
             "TitipanSurya",
             "InvestigasiLSM",
@@ -1310,29 +1346,24 @@ monogatari.script({
 
           let fullPool = isKorup ? korupPool : cleanPool;
 
-          // Filter event yang belum dimainkan di siklus ini
           let availableEvents = fullPool.filter(
             (e) => !playedEvents.includes(e),
           );
 
-          // FIX KRITIKAL: Jika pool habis, DAUR ULANG (Recycle) event-nya!
           if (availableEvents.length === 0) {
-            playedEvents = []; // Kosongkan history
-            availableEvents = fullPool; // Isi ulang pool dengan semua event
+            playedEvents = [];
+            availableEvents = fullPool;
           }
 
-          // Pilih event acak dari pool yang tersedia
           let chosenEvent =
             availableEvents[Math.floor(Math.random() * availableEvents.length)];
 
-          // Masukkan ke history agar tidak muncul berurutan
           playedEvents.push(chosenEvent);
           monogatari.storage({ playedEvents: playedEvents });
 
           return chosenEvent;
         },
 
-        // --- Daftar Jump Label (Sama seperti sebelumnya) ---
         JalanBerlubang: "jump Act2JalanBerlubang",
         PenggusuranPKL: "jump Act2PenggusuranPKL",
         KrisisAirBersih: "jump Act2KrisisAirBersih",
@@ -1377,7 +1408,7 @@ monogatari.script({
   JalanBerlubang_Pilihan: [
     {
       Choice: {
-        Dialog: "Apa keputusan yang harus diambil?", // Gunakan dialog netral
+        Dialog: "Apa keputusan yang harus diambil?",
         OpsiA: { Text: "Perbaiki sekarang", Do: "jump Act2JalanBerlubangA" },
         OpsiB: { Text: "Audit kontraktor", Do: "jump Act2JalanBerlubangB" },
       },
@@ -1389,7 +1420,7 @@ monogatari.script({
       Function: {
         Apply: function () {
           adjustLeadershipStats({ popularitas: 5, danaAnggaran: -10 });
-          monogatari.storage({ danaDaruratHabis: true }); // SET FLAG UNTUK RANTAI EVENT BENCANA
+          monogatari.storage({ danaDaruratHabis: true });
           return true;
         },
         Revert: function () {
@@ -1540,7 +1571,7 @@ monogatari.script({
   ],
 
   Event_Wartawan: [
-    "show scene hallway with fadeIn", // Menggunakan background lorong yang benar
+    "show scene hallway with fadeIn",
     {
       Conditional: {
         Condition: function () {
@@ -1556,9 +1587,9 @@ monogatari.script({
     "show character arya neutral at left with fadeIn classes dimmed",
     "show character maya serious at right with fadeIn classes focus",
     "maya Pak, jadwal kita selanjutnya adalah...",
-    "play sound camera_flash",
-    "show character wartawan asking at right with moveInRight classes focus",
     "show character maya serious at right classes dimmed",
+    "play sound shutter volume 0.8",
+    "show character wartawan asking at center with moveInRight classes focus",
     "wartawan Selamat siang, Pak Gubernur! Tunggu sebentar!",
     "jump Event_Wartawan_Core",
   ],
@@ -1566,7 +1597,8 @@ monogatari.script({
   Event_Wartawan_Intro_Sendiri: [
     "show character arya neutral at center with fadeIn classes focus",
     "arya (Lorong ini biasanya sepi, tapi tiba-tiba...) ",
-    "play sound camera_flash",
+    "show character arya neutral at left with move classes dimmed",
+    "play sound shutter volume 0.8",
     "show character wartawan asking at right with moveInRight classes focus",
     "wartawan Pak Arya! Satu pertanyaan untuk publik!",
     "jump Event_Wartawan_Core",
@@ -1595,9 +1627,7 @@ monogatari.script({
     applyStatChanges({ integritas: 5, danaAnggaran: -3 }),
     "arya Silakan periksa dokumen ini. Semua pengeluaran transparan.",
     "wartawan Wartawan itu mencatat dengan cepat dan tampak puas.",
-    "hide character wartawan with moveOutRight", // Wartawan pergi lewat kanan
-
-    // Perbaikan Event_Wartawan_A bagian akhir:
+    "hide character wartawan with moveOutRight",
     {
       Conditional: {
         Condition: function () {
@@ -1616,8 +1646,8 @@ monogatari.script({
     "show character wartawan probing at right classes focus",
     applyStatChanges({ popularitas: 5, integritas: -3 }),
     "arya Mari kita fokus pada penyelesaian proyek tersebut...",
+    "play sound shutter volume 0.8",
     "wartawan Wartawan itu menaikkan alisnya, mencatat sambil terus memotret.",
-    "play sound camera_flash",
     "hide character wartawan with moveOutRight",
     {
       Conditional: {
@@ -1887,29 +1917,38 @@ monogatari.script({
    * ====================================================== */
 
   Event_Jembatan_Ambruk: [
+    "stop music abstract-corporate fadeout 1",
+    "play music suspense loop fadein 1 volume 0.6",
+    "play sound siren loop volume 0.4",
     "show scene west_bridge_collapse with fadeIn",
     {
       Conditional: {
         Condition: function () {
           return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
         },
-        maya: "show character maya urgent at right with fadeIn",
-        sendiri: "show character arya concerned at center with fadeIn",
+        maya: "jump Jembatan_Ambruk_Maya",
+        sendiri: "jump Jembatan_Ambruk_Sendiri",
       },
     },
-    {
-      Conditional: {
-        Condition: function () {
-          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
-        },
-        maya: "maya Pak! Nyalakan TV sekarang. Jembatan Barat ambruk. Ratusan kendaraan terjebak.",
-        sendiri:
-          "arya (Suara sirine terdengar sampai kantor. Aku menyalakan TV... Jembatan Barat ambruk. Ratusan kendaraan terjebak.)",
-      },
-    },
+  ],
+
+  Jembatan_Ambruk_Maya: [
+    "show character arya concerned at left with fadeIn",
+    "show character maya urgent at right with fadeIn",
+    "maya Pak! Nyalakan TV sekarang. Jembatan Barat ambruk. Ratusan kendaraan terjebak.",
+    "jump Jembatan_Ambruk_Pilihan",
+  ],
+
+  Jembatan_Ambruk_Sendiri: [
+    "show character arya concerned at center with fadeIn",
+    "arya (Suara sirine terdengar sampai kantor. Aku menyalakan TV... Jembatan Barat ambruk. Ratusan kendaraan terjebak.)",
+    "jump Jembatan_Ambruk_Pilihan",
+  ],
+
+  Jembatan_Ambruk_Pilihan: [
     {
       Choice: {
-        Dialog: "maya Keputusan krusial, Pak!",
+        Dialog: "Keputusan krusial apa yang harus diambil saat ini?",
         TanggungJawab: {
           Text: "Ambil alih tanggung jawab penuh, gunakan Dana Darurat",
           Do: "jump Event_Jembatan_A",
@@ -1924,19 +1963,44 @@ monogatari.script({
 
   Event_Jembatan_A: [
     applyStatChanges({ integritas: 20, danaAnggaran: -25 }),
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Event_Jembatan_A_Maya",
+        sendiri: "jump Event_Jembatan_A_Sendiri",
+      },
+    },
+  ],
+
+  Event_Jembatan_A_Maya: [
     "show character maya urgent at right classes dimmed",
     "show character arya determined at left classes focus",
     "arya Siapkan mobil. Aku akan turun ke lokasi sekarang dan memimpin evakuasi. Cairkan dana darurat!",
     "show character maya urgent at right classes focus",
     "show character arya determined at left classes dimmed",
     "maya Baik, Pak! Tapi Anda harus memberikan pernyataan langsung di depan warga yang sedang marah. Anda tidak boleh terlihat ragu!",
+    "jump Event_Jembatan_A_Minigame",
+  ],
+
+  Event_Jembatan_A_Sendiri: [
+    "show character arya determined at center classes focus",
+    "arya (Aku harus turun ke lokasi sekarang dan memimpin evakuasi. Cairkan dana darurat!)",
+    "arya (Aku harus memberikan pernyataan langsung di depan warga yang sedang marah. Aku tidak boleh terlihat ragu sedikit pun!)",
+    "jump Event_Jembatan_A_Minigame",
+  ],
+
+  Event_Jembatan_A_Minigame: [
     {
       Function: {
         Apply: function () {
-          // Setting target mengetik manual jika mau
-          monogatari.storage({ typingTarget: "SAYA HADIR UNTUK MELAYANI!" });
-          StartTypingGame();
-          return false;
+          return new Promise(function (resolve) {
+            monogatari.storage({
+              typingTarget: "SAYA HADIR UNTUK MELAYANI!",
+            });
+            StartTypingGame(resolve);
+          });
         },
         Revert: function () {
           return true;
@@ -1956,36 +2020,94 @@ monogatari.script({
 
   Event_Jembatan_A_Win: [
     "show character arya determined at left classes focus",
-    "show character maya slight_smile at right classes dimmed",
     'arya "SAYA HADIR UNTUK MELAYANI!" Suaraku lantang menembus gemuruh hujan dan sirene ambulans.',
-    "maya Media menayangkan ketegasan Anda secara live. Publik bersimpati besar karena Anda berani pasang badan.",
     applyStatChanges({ popularitas: 15 }),
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Jembatan_Win_Maya",
+        sendiri: "jump Jembatan_Win_Sendiri",
+      },
+    },
+  ],
+
+  Jembatan_Win_Maya: [
+    "show character maya slight_smile at right classes focus",
+    "maya Media menayangkan ketegasan Anda secara live. Publik bersimpati besar karena Anda berani pasang badan.",
+    "jump Next_Turn",
+  ],
+
+  Jembatan_Win_Sendiri: [
+    "arya (Media menayangkan ketegasanku secara live. Setidaknya warga melihat aku berani pasang badan di saat krisis.)",
     "jump Next_Turn",
   ],
 
   Event_Jembatan_A_Lose: [
     "show character arya concerned at left classes focus",
-    "show character maya serious at right classes dimmed",
     'arya "Pemerintah... eh... akan menindaklanjuti..." Suaraku tenggelam oleh sorakan marah dan makian warga.',
-    "maya Kamera menangkap Anda terlihat gugup dan lemah di saat publik butuh pahlawan.",
     applyStatChanges({ popularitas: -15 }),
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Jembatan_Lose_Maya",
+        sendiri: "jump Jembatan_Lose_Sendiri",
+      },
+    },
+  ],
+
+  Jembatan_Lose_Maya: [
+    "show character maya serious at right classes focus",
+    "maya Kamera menangkap Anda terlihat gugup dan lemah di saat publik butuh pahlawan.",
+    "jump Next_Turn",
+  ],
+
+  Jembatan_Lose_Sendiri: [
+    "arya (Kamera menangkapku terlihat gugup dan lemah. Ini bencana reputasi yang sangat fatal...)",
     "jump Next_Turn",
   ],
 
   Event_Jembatan_B: [
     applyStatChanges({ integritas: -20, popularitas: -15 }),
+    {
+      Conditional: {
+        Condition: function () {
+          return monogatari.storage("mayaResigned") ? "sendiri" : "maya";
+        },
+        maya: "jump Jembatan_B_Maya",
+        sendiri: "jump Jembatan_B_Sendiri",
+      },
+    },
+  ],
+
+  Jembatan_B_Maya: [
+    "show character maya serious at right classes focus",
+    "show character arya neutral at left classes dimmed",
     "maya Konferensi pers selesai. Anda berhasil mengalihkan kesalahan, tapi komentar publik sangat negatif.",
+    "show character arya neutral at left classes focus",
+    "show character maya serious at right classes dimmed",
     "arya Mereka tidak bodoh. Mereka tahu siapa yang sedang menghindar.",
     "jump Next_Turn",
   ],
 
+  Jembatan_B_Sendiri: [
+    "show character arya concerned at center classes focus",
+    "arya (Konferensi pers selesai. Aku berhasil mengalihkan kesalahan, tapi komentar publik sangat negatif.)",
+    "arya (Mereka tidak bodoh. Mereka tahu siapa pemimpin pengecut yang sedang menghindar.)",
+    "jump Next_Turn",
+  ],
+
   Event_Negosiasi_VIP: [
+    "stop music kantor fadeout 2",
+    "play music tegang loop fadein 2 volume 0.5",
     "show scene elite_takeover_room with fadeIn",
     "show character arya thinking at left with fadeIn",
     "show character surya mysterious at right with fadeIn",
     "arya Aroma cerutu pekat memenuhi ruangan VIP. Di seberang meja, taipan properti Pak Surya menatapku sambil tersenyum tipis.",
 
-    // Dialog Surya
     'surya "Politik itu mahal, Arya. Dan idealisme... sayangnya tidak bisa membayar biaya kampanye tahun depan."',
     "surya Pak Surya menggeser sebuah koper kecil tanpa merek melintasi meja, tepat ke hadapanku.",
     "surya \"Saya butuh draf tata ruang kota yang melarang pembangunan di zona resapan air itu 'hilang' dari laci dewanku.\"",
@@ -2014,7 +2136,7 @@ monogatari.script({
     {
       Function: {
         Apply: function () {
-          monogatari.storage({ terimaSuap: true }); // MENGUNCI RUTE ENDING 1
+          monogatari.storage({ terimaSuap: true });
           adjustLeadershipStats({
             danaAnggaran: 30,
             integritas: -35,
@@ -2060,6 +2182,9 @@ monogatari.script({
 
   // EVENT RANTAI - BENCANA ALAM
   Event_Bencana_Alam: [
+    "stop music kantor fadeout 1",
+    "play music krisis loop fadein 1 volume 0.6",
+    "play sound siren loop volume 0.4",
     "show scene west_bridge_collapse with fadeIn",
     "show character maya urgent at right",
     "show character arya concerned at left",
@@ -2094,6 +2219,8 @@ monogatari.script({
    * ====================================================== */
 
   Event_Titipan_Surya: [
+    "stop music kantor fadeout 2",
+    "play music tegang loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     "show character maya serious at right classes dimmed",
     "show character arya concerned at left classes focus",
@@ -2268,6 +2395,8 @@ monogatari.script({
    * FINAL BOSS: DEBAT KANDIDAT (Turn 23)
    * ====================================================== */
   Event_Debat_Final: [
+    "stop music kantor fadeout 2",
+    "play music suspense loop fadein 2 volume 0.6",
     "show scene press_conference_room with fadeIn",
     "show character arya determined at left classes focus",
     "arya Malam debat kandidat putaran terakhir. Jutaan mata tertuju ke layar televisi.",
@@ -2311,6 +2440,10 @@ monogatari.script({
   ],
 
   Ending_Check: [
+    "stop music krisis fadeout 2",
+    "stop music kantor fadeout 2",
+    "stop sound ambience fadeout 2",
+    "play music tegang loop fadein 2 volume 0.5",
     "show scene election_night_office with fadeIn",
     "show character arya thinking at left with fadeIn",
     "show character maya serious at right with fadeIn",
@@ -2336,6 +2469,8 @@ monogatari.script({
   ],
 
   Ending1: [
+    "stop music tegang fadeout 2",
+    "play music abstract-corporate loop fadein 2 volume 0.6", // Main menu/victory music
     "show scene victory_balcony with fadeIn",
     "show character arya determined at left",
     "show character maya slight_smile at right",
@@ -2380,6 +2515,7 @@ monogatari.script({
   ],
 
   Ending3: [
+    "stop music tegang fadeout 2",
     "show scene bankrupt_city_hall with fadeIn",
     "show character arya concerned at left",
     "show character maya urgent at right",
@@ -2402,7 +2538,22 @@ monogatari.script({
   ],
 
   GameOver: [
+    "stop music tegang fadeout 1",
+    "stop music krisis fadeout 1",
+    "stop music kantor fadeout 1",
+    "stop sound ambience fadeout 1",
     "show scene #1b0f0f with fadeIn",
+    {
+      Function: {
+        Apply: function () {
+          monogatari.storage({ lastEnding: "gameover" });
+          return true;
+        },
+        Revert: function () {
+          return true;
+        },
+      },
+    },
     {
       Conditional: {
         Condition: function () {
