@@ -29,7 +29,7 @@ const { $_ready, $_ } = Monogatari;
 
 // Register music assets
 monogatari.assets("music", {
-  "abstract-corporate": "abstract-corporate.mp3",
+  kantor: "abstract-corporate.mp3",
   percussion: "percussion.mp3",
   suspense: "suspense.mp3",
 });

@@ -983,19 +983,25 @@ monogatari.characters({
 const { $_ready } = Monogatari;
 
 $_ready(() => {
-  monogatari
-    .init("#monogatari")
-    .then(() => {
-      // We wait a split second to make sure the game-screen is rendered
-      setTimeout(() => {
-        setupLeadershipStatsUI();
-        updateLeadershipStatsUI();
-        updateTurnUI();
-      }, 100);
-    })
-    .catch((err) => {
-      console.error("Initialization failed:", err);
-    });
+  monogatari.init("#monogatari").then(() => {
+    // This tiny bit "wakes up" the browser audio context
+    document.addEventListener(
+      "click",
+      () => {
+        const context = monogatari.adapter().audioContext();
+        if (context && context.state === "suspended") {
+          context.resume();
+        }
+      },
+      { once: true },
+    ); // Only runs on the first click
+
+    setTimeout(() => {
+      setupLeadershipStatsUI();
+      updateLeadershipStatsUI();
+      updateTurnUI();
+    }, 100);
+  });
 });
 
 monogatari.script({
@@ -1018,7 +1024,7 @@ monogatari.script({
   ],
 
   Act1Pelantikan: [
-    "play music abstract-corporate loop fadein 2 volume 0.5",
+    "play music kantor loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     "show notification Welcome",
     "show character arya thinking at left with fadeIn",
@@ -1111,7 +1117,7 @@ monogatari.script({
   ],
 
   Act2Intro: [
-    "play music abstract-corporate loop fadein 2 volume 0.5",
+    "play music kantor loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     "show character maya serious at right",
     "show character arya neutral at left",
@@ -1277,7 +1283,7 @@ monogatari.script({
 
   Next_Turn_RandomEvent: [
     "stop sound siren fadeout 2",
-    "play music abstract-corporate loop fadein 2 volume 0.5",
+    "play music kantor loop fadein 2 volume 0.5",
     "show scene governor_office_morning with fadeIn",
     {
       Conditional: {
@@ -1917,7 +1923,7 @@ monogatari.script({
    * ====================================================== */
 
   Event_Jembatan_Ambruk: [
-    "stop music abstract-corporate fadeout 1",
+    "stop music kantor fadeout 1",
     "play music suspense loop fadein 1 volume 0.6",
     "play sound siren loop volume 0.4",
     "show scene west_bridge_collapse with fadeIn",
@@ -2470,7 +2476,7 @@ monogatari.script({
 
   Ending1: [
     "stop music tegang fadeout 2",
-    "play music abstract-corporate loop fadein 2 volume 0.6", // Main menu/victory music
+    "play music kantor loop fadein 2 volume 0.6", // Main menu/victory music
     "show scene victory_balcony with fadeIn",
     "show character arya determined at left",
     "show character maya slight_smile at right",
