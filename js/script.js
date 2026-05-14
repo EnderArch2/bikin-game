@@ -246,31 +246,52 @@ function shouldEnterAct3() {
 
 // LOGIKA ENDING DIKUNCI BERDASARKAN CERITA
 function finalEndingBranch() {
-  const stats = leadershipStats();
-  const terimaSuap = monogatari.storage("terimaSuap") || false;
+  const stats = leadershipStats(); // Mengambil stats dari storage
+  const terimaSuap = monogatari.storage("terimaSuap") || false; // Status suap
 
-  // Jika menerima suap, rute "Negarawan" dikunci, tidak peduli setinggi apa integritasnya
+  // ==========================================
+  // SKENARIO 1: PEMAIN MENERIMA SUAP
+  // ==========================================
   if (terimaSuap) {
+    // Jalur Negarawan (Ending1) tertutup total jika pernah menerima suap.
+
     if (
-      stats.popularitas >= 40 &&
-      stats.danaAnggaran >= 30 &&
-      stats.integritas >= 20
+      stats.popularitas >= 50 &&
+      stats.danaAnggaran >= 40 &&
+      stats.integritas >= 10
     ) {
-      return "Ending2"; // Boneka Emas
+      // Ending 2: Boneka Emas (Bertahan karena uang & koneksi, tapi integritas rendah)
+      return "Ending2";
     }
-    return "Ending3"; // Runtuh
+
+    // Jika stats terlalu buruk meski sudah punya uang suap.
+    return "Ending3";
   }
 
+  // ==========================================
+  // SKENARIO 2: PEMAIN BERSIH (TIDAK TERIMA SUAP)
+  // ==========================================
+
+  // Syarat Ending 1: Negarawan Sejati (Sangat Sulit)
   if (
-    stats.popularitas >= 70 &&
-    stats.integritas >= 70 &&
-    stats.danaAnggaran >= 30
+    stats.popularitas >= 75 &&
+    stats.integritas >= 75 &&
+    stats.danaAnggaran >= 40
   ) {
     return "Ending1";
-  } else if (stats.danaAnggaran >= 70 && stats.popularitas >= 40) {
+  }
+
+  // Syarat Ending 2: Pemimpin Stabil (Berhasil menjabat tapi tidak luar biasa)
+  // Menambahkan cek Integritas agar tidak "Lolos" dengan integritas 0
+  else if (
+    stats.danaAnggaran >= 60 &&
+    stats.popularitas >= 50 &&
+    stats.integritas >= 40
+  ) {
     return "Ending2";
   }
 
+  // Jika tidak memenuhi standar di atas, kota tetap runtuh atau Arya gagal terpilih kembali.
   return "Ending3";
 }
 
